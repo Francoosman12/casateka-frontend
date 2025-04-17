@@ -66,19 +66,29 @@ const Movements = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    // Si el nombre incluye "habitacion", actualiza el objeto anidado
-    if (name.startsWith("habitacion.")) {
-      const [parent, child] = name.split("."); // Divide el nombre en "habitacion" y "numero" o "tipo"
+    // Si el usuario cambia el tipo de tarjeta (debitoCredito, virtual, transferencias)
+    if (name === "ingresos.tipoTarjeta") {
+      const previousType = formData.ingresos.tarjeta.tipoTarjeta || "virtual"; // Tipo anterior, por defecto "virtual"
+      const amount = formData.ingresos.tarjeta[previousType] || 0; // Monto actual del tipo anterior
+
       setFormData({
         ...formData,
-        [parent]: {
-          ...formData[parent], // Mantén el resto de los datos de habitacion
-          [child]: value, // Actualiza solo el campo específico
+        ingresos: {
+          ...formData.ingresos,
+          tarjeta: {
+            ...formData.ingresos.tarjeta,
+            [previousType]: null, // Resetea el valor del tipo anterior
+            [value]: amount, // Transfiere el monto al nuevo tipo
+            tipoTarjeta: value, // Cambia el tipo seleccionado
+          },
         },
       });
     } else {
-      // Actualiza los campos simples
-      setFormData({ ...formData, [name]: value });
+      // Para otros cambios en los inputs del formulario
+      setFormData({
+        ...formData,
+        [name]: value,
+      });
     }
   };
 
@@ -258,19 +268,16 @@ const Movements = () => {
                 />
               </Form.Group>
               <Form.Group className="mb-3">
-                <Form.Label>Tipo de Ingreso</Form.Label>
+                <Form.Label>Tipo de Tarjeta</Form.Label>
                 <Form.Select
-                  name="tipoIngreso"
-                  value={formData.tipoIngreso || ""}
+                  name="ingresos.tipoTarjeta"
+                  value={formData.ingresos?.tarjeta?.tipoTarjeta || ""}
                   onChange={handleChange}
                 >
-                  <option value="">Seleccione el tipo de ingreso</option>
-                  <option value="Efectivo">Efectivo</option>
-                  <option value="Tarjeta Débito/Crédito">
-                    Tarjeta Débito/Crédito
-                  </option>
-                  <option value="Tarjeta Virtual">Tarjeta Virtual</option>
-                  <option value="Transferencia">Transferencia</option>
+                  <option value="">Seleccione el tipo de tarjeta</option>
+                  <option value="debitoCredito">Débito/Crédito</option>
+                  <option value="virtual">Tarjeta Virtual</option>
+                  <option value="transferencias">Transferencias</option>
                 </Form.Select>
               </Form.Group>
               <Form.Group className="mb-3">

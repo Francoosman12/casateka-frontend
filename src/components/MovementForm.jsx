@@ -80,13 +80,30 @@ const MovementForm = () => {
         `${backendUrl}/api/movements`,
         formData
       ); // Usando variable de entorno
-      alert(
-        "Movimiento registrado con éxito: " + JSON.stringify(response.data)
-      );
+      alert("Movimiento registrado con éxito: ");
+      resetForm(); // Reinicia el formulario
     } catch (error) {
       console.error("Error al registrar el movimiento:", error.message);
       alert("Hubo un problema al registrar el movimiento.");
     }
+  };
+
+  const resetForm = () => {
+    setFormData({
+      ingresos: {
+        efectivo: { pesos: "", dolares: "", euros: "" },
+        tarjeta: { debitoCredito: "", virtual: "", transferencias: "" },
+      },
+      fechaPago: null,
+      nombre: "",
+      habitacion: { numero: "", tipo: "" },
+      checkIn: null,
+      checkOut: null,
+      ota: "",
+      autorizacion: "",
+      concepto: "",
+    });
+    setIngresoSeleccionado(""); // Reinicia ingresoSeleccionado si aplica
   };
 
   return (
