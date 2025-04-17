@@ -1,6 +1,6 @@
 import React from "react";
 import { Navbar, Nav, Container } from "react-bootstrap";
-import logo from "../../public/logo-casateka.png"; // Ruta al archivo del logo
+import logo from "../assets/logo-casateka.png"; // Ruta al archivo del logo
 
 const NavbarComponent = () => {
   return (
