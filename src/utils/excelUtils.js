@@ -17,23 +17,31 @@ export const exportToExcel = (filteredData) => {
     data.forEach((item) => {
       const row = columns.map((col) => {
         switch (col) {
-          case "Fecha de Pago":
+          case "Fecha de Pago": {
             return item.fechaPago ? new Date(item.fechaPago).toLocaleDateString() : "";
-          case "Nombre":
+          }
+          case "Nombre": {
             return item.nombre || "N/A";
-          case "Habitación":
+          }
+          case "Habitación": {
             return item.habitacion?.numero || "N/A";
-          case "Tipo de Habitación":
+          }
+          case "Tipo de Habitación": {
             return item.habitacion?.tipo || "N/A";
-          case "Check-In":
+          }
+          case "Check-In": {
             return item.checkIn ? new Date(item.checkIn).toLocaleDateString() : "";
-          case "Check-Out":
+          }
+          case "Check-Out": {
             return item.checkOut ? new Date(item.checkOut).toLocaleDateString() : "";
-          case "Autorización":
+          }
+          case "Autorización": {
             return item.autorizacion || "N/A";
-          case "OTA":
+          }
+          case "OTA": {
             return item.ota || "Sin OTA";
-          case "Importe":
+          }
+          case "Importe": {
             const importe =
               item.ingresos?.efectivo?.pesos ||
               item.ingresos?.efectivo?.dolares ||
@@ -44,15 +52,17 @@ export const exportToExcel = (filteredData) => {
               0;
             subtotal += importe; // Acumular subtotal
             return importe;
-          case "Concepto":
+          }
+          case "Concepto": {
             return item.concepto || "N/A";
-          default:
+          }
+          default: {
             return "";
+          }
         }
       });
       sheetData.push(row); // Agregar fila a la tabla
     });
-
     // Agregar fila de subtotal
     const subtotalRow = columns.map((col) => (col === "Importe" ? subtotal : col === "" ? "" : ""));
     subtotalRow[0] = "Subtotal:"; // Agregar texto "Subtotal" en la primera celda
