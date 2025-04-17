@@ -283,7 +283,7 @@ const Movements = () => {
                   <option value="">Seleccione una OTA</option>
                   <option value="Booking">Booking.com</option>
                   <option value="Expedia">Expedia</option>
-                  <option value="Directa">Airbnb</option>
+                  <option value="Directa">Directa</option>
                 </Form.Select>
               </Form.Group>
             </Form>
