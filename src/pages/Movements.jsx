@@ -258,13 +258,35 @@ const Movements = () => {
                 />
               </Form.Group>
               <Form.Group className="mb-3">
+                <Form.Label>Tipo de Ingreso</Form.Label>
+                <Form.Select
+                  name="tipoIngreso"
+                  value={formData.tipoIngreso || ""}
+                  onChange={handleChange}
+                >
+                  <option value="">Seleccione el tipo de ingreso</option>
+                  <option value="Efectivo">Efectivo</option>
+                  <option value="Tarjeta Débito/Crédito">
+                    Tarjeta Débito/Crédito
+                  </option>
+                  <option value="Tarjeta Virtual">Tarjeta Virtual</option>
+                  <option value="Transferencia">Transferencia</option>
+                </Form.Select>
+              </Form.Group>
+              <Form.Group className="mb-3">
                 <Form.Label>OTA</Form.Label>
-                <Form.Control
-                  type="text"
+                <Form.Select
                   name="ota"
                   value={formData.ota || ""}
                   onChange={handleChange}
-                />
+                >
+                  <option value="">Seleccione una OTA</option>
+                  <option value="Booking.com">Booking.com</option>
+                  <option value="Expedia">Expedia</option>
+                  <option value="Airbnb">Airbnb</option>
+                  <option value="Hoteles.com">Hoteles.com</option>
+                  <option value="Otro">Otro</option>
+                </Form.Select>
               </Form.Group>
             </Form>
           )}
