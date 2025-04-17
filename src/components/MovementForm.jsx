@@ -113,6 +113,7 @@ const MovementForm = () => {
                   <Form.Label>Pesos</Form.Label>
                   <Form.Control
                     type="number"
+                    step="any"
                     placeholder="Pesos"
                     onChange={(e) =>
                       handleIngresosChange(e, "efectivo", "pesos")
@@ -125,6 +126,7 @@ const MovementForm = () => {
                   <Form.Label>Dólares</Form.Label>
                   <Form.Control
                     type="number"
+                    step="any"
                     placeholder="Dólares"
                     onChange={(e) =>
                       handleIngresosChange(e, "efectivo", "dolares")
@@ -137,6 +139,7 @@ const MovementForm = () => {
                   <Form.Label>Euros</Form.Label>
                   <Form.Control
                     type="number"
+                    step="any"
                     placeholder="Euros"
                     onChange={(e) =>
                       handleIngresosChange(e, "efectivo", "euros")
@@ -158,6 +161,7 @@ const MovementForm = () => {
                   <Form.Label>Débito/Crédito</Form.Label>
                   <Form.Control
                     type="number"
+                    step="any"
                     placeholder="Tarjeta Débito/Crédito"
                     onChange={(e) =>
                       handleIngresosChange(e, "tarjeta", "debitoCredito")
@@ -170,6 +174,7 @@ const MovementForm = () => {
                   <Form.Label>Tarjeta Virtual</Form.Label>
                   <Form.Control
                     type="number"
+                    step="any"
                     placeholder="Virtual"
                     onChange={(e) =>
                       handleIngresosChange(e, "tarjeta", "virtual")
@@ -182,6 +187,7 @@ const MovementForm = () => {
                   <Form.Label>Transferencias</Form.Label>
                   <Form.Control
                     type="number"
+                    step="any"
                     placeholder="Transferencias"
                     onChange={(e) =>
                       handleIngresosChange(e, "tarjeta", "transferencias")
