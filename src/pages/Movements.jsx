@@ -281,11 +281,9 @@ const Movements = () => {
                   onChange={handleChange}
                 >
                   <option value="">Seleccione una OTA</option>
-                  <option value="Booking.com">Booking.com</option>
+                  <option value="Booking">Booking.com</option>
                   <option value="Expedia">Expedia</option>
-                  <option value="Airbnb">Airbnb</option>
-                  <option value="Hoteles.com">Hoteles.com</option>
-                  <option value="Otro">Otro</option>
+                  <option value="Directa">Airbnb</option>
                 </Form.Select>
               </Form.Group>
             </Form>
