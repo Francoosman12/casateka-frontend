@@ -14,7 +14,19 @@ const Movements = () => {
   const [movements, setMovements] = useState([]); // Estado para los movimientos
   const [showModal, setShowModal] = useState(false); // Estado para controlar el modal
   const [selectedMovement, setSelectedMovement] = useState(null); // Estado para el movimiento seleccionado
-  const [formData, setFormData] = useState({}); // Estado para el formulario
+  const [formData, setFormData] = useState({
+    nombre: "",
+    habitacion: { numero: "", tipo: "" },
+    checkIn: "",
+    checkOut: "",
+    concepto: "",
+    ingreso: {
+      tipo: "", // Tipo de ingreso seleccionado
+      subtipo: "", // Subtipo de ingreso
+      monto: "", // Monto editable según el tipo y subtipo
+    },
+    ota: "",
+  });
 
   // Obtener todos los movimientos al cargar la página
   useEffect(() => {
@@ -66,29 +78,30 @@ const Movements = () => {
   const handleChange = (e) => {
     const { name, value } = e.target;
 
-    // Si el usuario cambia el tipo de tarjeta (debitoCredito, virtual, transferencias)
-    if (name === "ingresos.tipoTarjeta") {
-      const previousType = formData.ingresos.tarjeta.tipoTarjeta || "virtual"; // Tipo anterior, por defecto "virtual"
-      const amount = formData.ingresos.tarjeta[previousType] || 0; // Monto actual del tipo anterior
-
-      setFormData({
-        ...formData,
-        ingresos: {
-          ...formData.ingresos,
-          tarjeta: {
-            ...formData.ingresos.tarjeta,
-            [previousType]: null, // Resetea el valor del tipo anterior
-            [value]: amount, // Transfiere el monto al nuevo tipo
-            tipoTarjeta: value, // Cambia el tipo seleccionado
-          },
+    if (name === "ingreso.tipo" || name === "ingreso.subtipo") {
+      setFormData((prevData) => ({
+        ...prevData,
+        ingreso: {
+          ...prevData.ingreso,
+          [name.split(".")[1]]: value, // Actualizar tipo o subtipo
+          monto: "", // Reinicia el monto editable
         },
-      });
+      }));
+    } else if (name === "ingreso.monto") {
+      // Actualizar monto
+      setFormData((prevData) => ({
+        ...prevData,
+        ingreso: {
+          ...prevData.ingreso,
+          monto: value,
+        },
+      }));
     } else {
-      // Para otros cambios en los inputs del formulario
-      setFormData({
-        ...formData,
+      // Otros campos simples
+      setFormData((prevData) => ({
+        ...prevData,
         [name]: value,
-      });
+      }));
     }
   };
 
@@ -97,28 +110,31 @@ const Movements = () => {
     const confirmUpdate = window.confirm(
       "¿Estás seguro de que deseas actualizar este movimiento?"
     );
-    if (!confirmUpdate) return; // Si el usuario cancela, no hacer nada
+    if (!confirmUpdate) return;
 
     try {
       await axios.put(
         `${import.meta.env.VITE_BACKEND_URL}/api/movements/${
           selectedMovement._id
-        }`, // Utilizando la variable de entorno
+        }`,
         formData
-      ); // Actualizar movimiento por ID
+      ); // Enviar datos actualizados
+
+      // Actualizar el estado local para reflejar cambios
       setMovements(
         movements.map((movement) =>
           movement._id === selectedMovement._id
             ? { ...movement, ...formData }
             : movement
         )
-      ); // Actualizar estado con los cambios
-      handleCloseModal(); // Cerrar el modal
+      );
+
+      handleCloseModal();
     } catch (error) {
       console.error("Error al actualizar el movimiento:", error.message);
+      alert("Hubo un problema al actualizar el movimiento.");
     }
   };
-
   return (
     <Container className="mt-5">
       <Row className="mb-4">
@@ -165,13 +181,10 @@ const Movements = () => {
                     <td>{movement.concepto || "N/A"}</td>
                     <td>{movement.ota || "N/A"}</td>
                     <td>
-                      {movement.ingresos?.efectivo?.pesos ||
-                        movement.ingresos?.efectivo?.dolares ||
-                        movement.ingresos?.efectivo?.euros ||
-                        movement.ingresos?.tarjeta?.debitoCredito ||
-                        movement.ingresos?.tarjeta?.virtual ||
-                        movement.ingresos?.tarjeta?.transferencias ||
-                        0}
+                      {movement.ingreso?.monto?.toLocaleString("es-MX", {
+                        style: "currency",
+                        currency: "MXN",
+                      }) || "$0.00"}
                     </td>
                     <td>
                       <Button
@@ -205,6 +218,7 @@ const Movements = () => {
         <Modal.Body>
           {selectedMovement && (
             <Form>
+              {/* Nombre del huésped */}
               <Form.Group className="mb-3">
                 <Form.Label>Nombre</Form.Label>
                 <Form.Control
@@ -212,8 +226,11 @@ const Movements = () => {
                   name="nombre"
                   value={formData.nombre || ""}
                   onChange={handleChange}
+                  placeholder="Ingresa el nombre del huésped"
                 />
               </Form.Group>
+
+              {/* Número de Habitación */}
               <Form.Group className="mb-3">
                 <Form.Label>Habitación</Form.Label>
                 <Form.Select
@@ -221,7 +238,7 @@ const Movements = () => {
                   value={formData.habitacion?.numero || ""}
                   onChange={handleChange}
                 >
-                  <option value="">Seleccione una habitación</option>
+                  <option value="">Selecciona una habitación</option>
                   {[...Array(11).keys()].map((num) => (
                     <option key={num + 1} value={num + 1}>
                       Habitación {num + 1}
@@ -229,18 +246,20 @@ const Movements = () => {
                   ))}
                 </Form.Select>
               </Form.Group>
+
+              {/* Tipo de Habitación */}
               <Form.Group className="mb-3">
-                <Form.Label>Concepto</Form.Label>
-                <Form.Select
-                  name="concepto"
-                  value={formData.concepto || ""}
+                <Form.Label>Tipo de Habitación</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="habitacion.tipo"
+                  value={formData.habitacion?.tipo || ""}
                   onChange={handleChange}
-                >
-                  <option value="">Seleccione un concepto</option>
-                  <option value="Cobro de estancia">Cobro de estancia</option>
-                  <option value="Amenidades">Amenidades</option>
-                </Form.Select>
+                  placeholder="Ingresa el tipo de habitación"
+                />
               </Form.Group>
+
+              {/* Check-In */}
               <Form.Group className="mb-3">
                 <Form.Label>Check-In</Form.Label>
                 <Form.Control
@@ -254,6 +273,8 @@ const Movements = () => {
                   onChange={handleChange}
                 />
               </Form.Group>
+
+              {/* Check-Out */}
               <Form.Group className="mb-3">
                 <Form.Label>Check-Out</Form.Label>
                 <Form.Control
@@ -267,19 +288,22 @@ const Movements = () => {
                   onChange={handleChange}
                 />
               </Form.Group>
+
+              {/* Concepto */}
               <Form.Group className="mb-3">
-                <Form.Label>Tipo de Tarjeta</Form.Label>
+                <Form.Label>Concepto</Form.Label>
                 <Form.Select
-                  name="ingresos.tipoTarjeta"
-                  value={formData.ingresos?.tarjeta?.tipoTarjeta || ""}
+                  name="concepto"
+                  value={formData.concepto || ""}
                   onChange={handleChange}
                 >
-                  <option value="">Seleccione el tipo de tarjeta</option>
-                  <option value="debitoCredito">Débito/Crédito</option>
-                  <option value="virtual">Tarjeta Virtual</option>
-                  <option value="transferencias">Transferencias</option>
+                  <option value="">Selecciona un concepto</option>
+                  <option value="Cobro de estancia">Cobro de estancia</option>
+                  <option value="Amenidades">Amenidades</option>
                 </Form.Select>
               </Form.Group>
+
+              {/* OTA */}
               <Form.Group className="mb-3">
                 <Form.Label>OTA</Form.Label>
                 <Form.Select
@@ -287,16 +311,89 @@ const Movements = () => {
                   value={formData.ota || ""}
                   onChange={handleChange}
                 >
-                  <option value="">Seleccione una OTA</option>
+                  <option value="">Selecciona una OTA</option>
                   <option value="Booking">Booking.com</option>
                   <option value="Expedia">Expedia</option>
                   <option value="Directa">Directa</option>
                 </Form.Select>
               </Form.Group>
+
+              {/* Tipo de ingreso */}
+              <Form.Group className="mb-3">
+                <Form.Label>Tipo de Ingreso</Form.Label>
+                <Form.Select
+                  name="ingreso.tipo"
+                  value={formData.ingreso?.tipo || ""}
+                  onChange={handleChange}
+                >
+                  <option value="">Selecciona el tipo de ingreso</option>
+                  <option value="Efectivo">Efectivo</option>
+                  <option value="Tarjeta">Tarjeta</option>
+                </Form.Select>
+              </Form.Group>
+
+              {/* Subtipo de ingreso */}
+              <Form.Group className="mb-3">
+                <Form.Label>Subtipo de Ingreso</Form.Label>
+                <Form.Select
+                  name="ingreso.subtipo"
+                  value={formData.ingreso?.subtipo || ""}
+                  onChange={handleChange}
+                >
+                  <option value="">Selecciona el subtipo de ingreso</option>
+                  <option value="Pesos">Pesos</option>
+                  <option value="Dólares">Dólares</option>
+                  <option value="Euros">Euros</option>
+                  <option value="Débito/Crédito">Débito/Crédito</option>
+                  <option value="Virtual">Virtual</option>
+                  <option value="Transferencias">Transferencias</option>
+                </Form.Select>
+              </Form.Group>
+
+              {/* Monto */}
+              <Form.Group className="mb-3">
+                <Form.Label>Monto</Form.Label>
+                <Form.Control
+                  type="text"
+                  name="monto"
+                  value={formData.ingreso?.monto || "0,00"} // Valor inicial por defecto
+                  onChange={(e) => {
+                    let inputValue = e.target.value;
+
+                    // Remover cualquier carácter no numérico
+                    inputValue = inputValue.replace(/[^0-9]/g, "");
+
+                    // Asegurar al menos tres dígitos para manejar decimales correctamente
+                    while (inputValue.length < 3) {
+                      inputValue = "0" + inputValue; // Rellenar con ceros al inicio
+                    }
+
+                    // Separar la parte entera y los decimales
+                    const integerPart = inputValue.slice(0, -2); // Parte entera
+                    const decimalPart = inputValue.slice(-2); // Últimos 2 dígitos como decimales
+
+                    // Formatear la parte entera y eliminar ceros iniciales innecesarios
+                    const formattedIntegerPart = integerPart
+                      .replace(/^0+(?!$)/, "") // Remover ceros a la izquierda
+                      .replace(/\B(?=(\d{3})+(?!\d))/g, "."); // Agregar puntos como separadores de miles
+
+                    // Construir el valor formateado
+                    const formattedValue = `${
+                      formattedIntegerPart || "0"
+                    },${decimalPart}`;
+
+                    // Actualizar el estado con el valor formateado
+                    setFormData((prevData) => ({
+                      ...prevData,
+                      ingreso: { ...prevData.ingreso, monto: formattedValue },
+                    }));
+                  }}
+                  placeholder="Ingrese el monto (Ej: $1.500,00)"
+                />
+              </Form.Group>
             </Form>
           )}
         </Modal.Body>
-
         <Modal.Footer>
           <Button variant="secondary" onClick={handleCloseModal}>
             Cancelar

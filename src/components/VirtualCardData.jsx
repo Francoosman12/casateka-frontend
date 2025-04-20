@@ -2,18 +2,22 @@ import React from "react";
 import { Container, Table, Row, Col, Card } from "react-bootstrap";
 
 const VirtualCardData = ({ data }) => {
-  // Filtrar los movimientos por Tarjetas Virtuales y concepto
+  // Filtrar movimientos por Tarjetas Virtuales y concepto
   const tarjetaVirtualEstancia = data.filter(
     (item) =>
-      item.ingresos?.tarjeta?.virtual > 0 &&
+      item.ingreso?.tipo === "Tarjeta" &&
+      item.ingreso?.subtipo === "Virtual" &&
       item.concepto === "Cobro de estancia"
   );
+
   const tarjetaVirtualAmenidades = data.filter(
     (item) =>
-      item.ingresos?.tarjeta?.virtual > 0 && item.concepto === "Amenidades"
+      item.ingreso?.tipo === "Tarjeta" &&
+      item.ingreso?.subtipo === "Virtual" &&
+      item.concepto === "Amenidades"
   );
 
-  // Agrupar los movimientos por OTA (Booking, Expedia, Directa)
+  // Agrupar los movimientos por OTA (Booking, Expedia, Directa, etc.)
   const groupByOTA = (items) => {
     return items.reduce((grouped, item) => {
       const key = item.ota || "Sin OTA"; // Fallback a "Sin OTA" si la OTA está vacía
@@ -27,10 +31,14 @@ const VirtualCardData = ({ data }) => {
 
   // Función para calcular el subtotal
   const calculateSubtotal = (items) => {
-    return items.reduce(
-      (total, item) => total + (item.ingresos?.tarjeta?.virtual || 0),
-      0
-    );
+    return items
+      .reduce((total, item) => {
+        const monto = parseFloat(
+          item.ingreso?.monto.replace(/\./g, "").replace(",", ".") || "0"
+        );
+        return total + monto;
+      }, 0)
+      .toLocaleString("es-MX", { style: "currency", currency: "MXN" }); // Formateo con moneda
   };
 
   return (
@@ -78,7 +86,7 @@ const VirtualCardData = ({ data }) => {
                       <td>{new Date(item.checkIn).toLocaleDateString()}</td>
                       <td>{new Date(item.checkOut).toLocaleDateString()}</td>
                       <td>{item.autorizacion || "N/A"}</td>
-                      <td>${item.ingresos?.tarjeta?.virtual || 0}</td>
+                      <td>{item.ingreso?.monto || "$0.00"}</td>
                     </tr>
                   ))}
                   {/* Subtotal */}
@@ -87,7 +95,7 @@ const VirtualCardData = ({ data }) => {
                       Subtotal:
                     </td>
                     <td className="fw-bold">
-                      ${calculateSubtotal(groupedEstancia[ota])}
+                      {calculateSubtotal(groupedEstancia[ota])}
                     </td>
                   </tr>
                 </tbody>
@@ -121,7 +129,7 @@ const VirtualCardData = ({ data }) => {
                     <td>{item.nombre}</td>
                     <td>{item.concepto}</td>
                     <td>{item.autorizacion || "N/A"}</td>
-                    <td>${item.ingresos?.tarjeta?.virtual || 0}</td>
+                    <td>{item.ingreso?.monto || "$0.00"}</td>
                   </tr>
                 ))}
                 {/* Subtotal */}
@@ -130,7 +138,7 @@ const VirtualCardData = ({ data }) => {
                     Subtotal:
                   </td>
                   <td className="fw-bold">
-                    ${calculateSubtotal(tarjetaVirtualAmenidades)}
+                    {calculateSubtotal(tarjetaVirtualAmenidades)}
                   </td>
                 </tr>
               </tbody>

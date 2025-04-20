@@ -4,27 +4,58 @@ import { Container, Table, Row, Col, Card } from "react-bootstrap";
 const Totals = ({ data }) => {
   // Cálculo de totales por categoría
   const totalEfectivoMXN = data.reduce(
-    (total, item) => total + (item.ingresos?.efectivo?.pesos || 0),
+    (total, item) =>
+      total +
+      (item.ingreso?.tipo === "Efectivo" && item.ingreso?.subtipo === "Pesos"
+        ? parseFloat(item.ingreso.monto.replace(/\./g, "").replace(",", "."))
+        : 0),
     0
   );
+
   const totalEfectivoUSD = data.reduce(
-    (total, item) => total + (item.ingresos?.efectivo?.dolares || 0),
+    (total, item) =>
+      total +
+      (item.ingreso?.tipo === "Efectivo" && item.ingreso?.subtipo === "Dólares"
+        ? parseFloat(item.ingreso.monto.replace(/\./g, "").replace(",", "."))
+        : 0),
     0
   );
+
   const totalEfectivoEUR = data.reduce(
-    (total, item) => total + (item.ingresos?.efectivo?.euros || 0),
+    (total, item) =>
+      total +
+      (item.ingreso?.tipo === "Efectivo" && item.ingreso?.subtipo === "Euros"
+        ? parseFloat(item.ingreso.monto.replace(/\./g, "").replace(",", "."))
+        : 0),
     0
   );
+
   const totalDebitoCredito = data.reduce(
-    (total, item) => total + (item.ingresos?.tarjeta?.debitoCredito || 0),
+    (total, item) =>
+      total +
+      (item.ingreso?.tipo === "Tarjeta" &&
+      item.ingreso?.subtipo === "Débito/Crédito"
+        ? parseFloat(item.ingreso.monto.replace(/\./g, "").replace(",", "."))
+        : 0),
     0
   );
+
   const totalTarjetasVirtuales = data.reduce(
-    (total, item) => total + (item.ingresos?.tarjeta?.virtual || 0),
+    (total, item) =>
+      total +
+      (item.ingreso?.tipo === "Tarjeta" && item.ingreso?.subtipo === "Virtual"
+        ? parseFloat(item.ingreso.monto.replace(/\./g, "").replace(",", "."))
+        : 0),
     0
   );
+
   const totalTransferencias = data.reduce(
-    (total, item) => total + (item.ingresos?.tarjeta?.transferencias || 0),
+    (total, item) =>
+      total +
+      (item.ingreso?.tipo === "Tarjeta" &&
+      item.ingreso?.subtipo === "Transferencias"
+        ? parseFloat(item.ingreso.monto.replace(/\./g, "").replace(",", "."))
+        : 0),
     0
   );
 
@@ -38,53 +69,22 @@ const Totals = ({ data }) => {
     totalTransferencias;
 
   // Cálculo de totales por OTAs
-  const totalBooking = data
-    .filter(
-      (item) => item.ota === "Booking" && item.concepto === "Cobro de estancia"
-    )
-    .reduce((total, item) => {
-      return (
-        total +
-        (item.ingresos?.efectivo?.pesos || 0) +
-        (item.ingresos?.efectivo?.dolares || 0) +
-        (item.ingresos?.efectivo?.euros || 0) +
-        (item.ingresos?.tarjeta?.debitoCredito || 0) +
-        (item.ingresos?.tarjeta?.virtual || 0) +
-        (item.ingresos?.tarjeta?.transferencias || 0)
-      );
-    }, 0);
+  const calculateOTA = (ota) => {
+    return data
+      .filter(
+        (item) => item.ota === ota && item.concepto === "Cobro de estancia"
+      )
+      .reduce((total, item) => {
+        return (
+          total +
+          parseFloat(item.ingreso.monto.replace(/\./g, "").replace(",", "."))
+        );
+      }, 0);
+  };
 
-  const totalExpedia = data
-    .filter(
-      (item) => item.ota === "Expedia" && item.concepto === "Cobro de estancia"
-    )
-    .reduce((total, item) => {
-      return (
-        total +
-        (item.ingresos?.efectivo?.pesos || 0) +
-        (item.ingresos?.efectivo?.dolares || 0) +
-        (item.ingresos?.efectivo?.euros || 0) +
-        (item.ingresos?.tarjeta?.debitoCredito || 0) +
-        (item.ingresos?.tarjeta?.virtual || 0) +
-        (item.ingresos?.tarjeta?.transferencias || 0)
-      );
-    }, 0);
-
-  const totalDirecta = data
-    .filter(
-      (item) => item.ota === "Directa" && item.concepto === "Cobro de estancia"
-    )
-    .reduce((total, item) => {
-      return (
-        total +
-        (item.ingresos?.efectivo?.pesos || 0) +
-        (item.ingresos?.efectivo?.dolares || 0) +
-        (item.ingresos?.efectivo?.euros || 0) +
-        (item.ingresos?.tarjeta?.debitoCredito || 0) +
-        (item.ingresos?.tarjeta?.virtual || 0) +
-        (item.ingresos?.tarjeta?.transferencias || 0)
-      );
-    }, 0);
+  const totalBooking = calculateOTA("Booking");
+  const totalExpedia = calculateOTA("Expedia");
+  const totalDirecta = calculateOTA("Directa");
 
   // Calcular el total de estancias
   const totalEstancia = data
@@ -92,12 +92,7 @@ const Totals = ({ data }) => {
     .reduce((total, item) => {
       return (
         total +
-        (item.ingresos?.efectivo?.pesos || 0) +
-        (item.ingresos?.efectivo?.dolares || 0) +
-        (item.ingresos?.efectivo?.euros || 0) +
-        (item.ingresos?.tarjeta?.debitoCredito || 0) +
-        (item.ingresos?.tarjeta?.virtual || 0) +
-        (item.ingresos?.tarjeta?.transferencias || 0)
+        parseFloat(item.ingreso.monto.replace(/\./g, "").replace(",", "."))
       );
     }, 0);
 
@@ -115,12 +110,7 @@ const Totals = ({ data }) => {
     .reduce((total, item) => {
       return (
         total +
-        (item.ingresos?.efectivo?.pesos || 0) +
-        (item.ingresos?.efectivo?.dolares || 0) +
-        (item.ingresos?.efectivo?.euros || 0) +
-        (item.ingresos?.tarjeta?.debitoCredito || 0) +
-        (item.ingresos?.tarjeta?.virtual || 0) +
-        (item.ingresos?.tarjeta?.transferencias || 0)
+        parseFloat(item.ingreso.monto.replace(/\./g, "").replace(",", "."))
       );
     }, 0);
 
@@ -150,15 +140,30 @@ const Totals = ({ data }) => {
             <tbody>
               <tr>
                 <td>MXN</td>
-                <td>${totalEfectivoMXN}</td>
+                <td>
+                  {totalEfectivoMXN.toLocaleString("es-MX", {
+                    style: "currency",
+                    currency: "MXN",
+                  })}
+                </td>
               </tr>
               <tr>
                 <td>USD</td>
-                <td>${totalEfectivoUSD}</td>
+                <td>
+                  {totalEfectivoUSD.toLocaleString("en-US", {
+                    style: "currency",
+                    currency: "USD",
+                  })}
+                </td>
               </tr>
               <tr>
                 <td>EUR</td>
-                <td>${totalEfectivoEUR}</td>
+                <td>
+                  {totalEfectivoEUR.toLocaleString("de-DE", {
+                    style: "currency",
+                    currency: "EUR",
+                  })}
+                </td>
               </tr>
             </tbody>
           </Table>
@@ -175,15 +180,30 @@ const Totals = ({ data }) => {
             <tbody>
               <tr>
                 <td>Débito/Crédito</td>
-                <td>${totalDebitoCredito}</td>
+                <td>
+                  {totalDebitoCredito.toLocaleString("es-MX", {
+                    style: "currency",
+                    currency: "MXN",
+                  })}
+                </td>
               </tr>
               <tr>
                 <td>Virtuales</td>
-                <td>${totalTarjetasVirtuales}</td>
+                <td>
+                  {totalTarjetasVirtuales.toLocaleString("es-MX", {
+                    style: "currency",
+                    currency: "MXN",
+                  })}
+                </td>
               </tr>
               <tr>
                 <td>Transferencias</td>
-                <td>${totalTransferencias}</td>
+                <td>
+                  {totalTransferencias.toLocaleString("es-MX", {
+                    style: "currency",
+                    currency: "MXN",
+                  })}
+                </td>
               </tr>
             </tbody>
           </Table>
@@ -202,11 +222,21 @@ const Totals = ({ data }) => {
             <tbody>
               <tr>
                 <td>Cobro de Estancia</td>
-                <td>${totalEstancia}</td>
+                <td>
+                  {totalEstancia.toLocaleString("es-MX", {
+                    style: "currency",
+                    currency: "MXN",
+                  })}
+                </td>
               </tr>
               <tr>
                 <td>Amenidades</td>
-                <td>${totalAmenidades}</td>
+                <td>
+                  {totalAmenidades.toLocaleString("es-MX", {
+                    style: "currency",
+                    currency: "MXN",
+                  })}
+                </td>
               </tr>
             </tbody>
           </Table>
@@ -225,15 +255,30 @@ const Totals = ({ data }) => {
             <tbody>
               <tr>
                 <td>Booking</td>
-                <td>${totalBooking}</td>
+                <td>
+                  {totalBooking.toLocaleString("es-MX", {
+                    style: "currency",
+                    currency: "MXN",
+                  })}
+                </td>
               </tr>
               <tr>
                 <td>Expedia</td>
-                <td>${totalExpedia}</td>
+                <td>
+                  {totalExpedia.toLocaleString("es-MX", {
+                    style: "currency",
+                    currency: "MXN",
+                  })}
+                </td>
               </tr>
               <tr>
                 <td>Directa</td>
-                <td>${totalDirecta}</td>
+                <td>
+                  {totalDirecta.toLocaleString("es-MX", {
+                    style: "currency",
+                    currency: "MXN",
+                  })}
+                </td>
               </tr>
             </tbody>
           </Table>
@@ -250,11 +295,21 @@ const Totals = ({ data }) => {
             <tbody>
               <tr>
                 <td>Total General</td>
-                <td>${totalGeneral}</td>
+                <td>
+                  {totalGeneral.toLocaleString("es-MX", {
+                    style: "currency",
+                    currency: "MXN",
+                  })}
+                </td>
               </tr>
               <tr>
                 <td>Promedio por Noche</td>
-                <td>${tarifaPromedioPorNoche.toFixed(2)}</td>
+                <td>
+                  {tarifaPromedioPorNoche.toLocaleString("es-MX", {
+                    style: "currency",
+                    currency: "MXN",
+                  })}
+                </td>
               </tr>
             </tbody>
           </Table>

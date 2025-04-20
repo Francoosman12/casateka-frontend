@@ -72,15 +72,18 @@ const MovementForm = () => {
       },
     }));
   };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      const response = await axios.post(
-        `${backendUrl}/api/movements`,
-        formData
-      ); // Usando variable de entorno
-      alert("Movimiento registrado con éxito: ");
+      const response = await axios.post(`${backendUrl}/api/movements`, {
+        ...formData,
+        ingreso: {
+          tipo: formData.ingreso.tipo,
+          subtipo: formData.ingreso.subtipo,
+          monto: formData.ingreso.monto, // Valor formateado se envía directamente
+        },
+      });
+      alert("Movimiento registrado con éxito");
       resetForm(); // Reinicia el formulario
     } catch (error) {
       console.error("Error al registrar el movimiento:", error.message);
@@ -112,124 +115,119 @@ const MovementForm = () => {
       <Form onSubmit={handleSubmit}>
         {/* Tipo de Ingreso */}
         <Form.Group className="mb-3">
-          <Form.Label>Tipo de Ingreso</Form.Label>
-          <Form.Select onChange={(e) => setIngresoSeleccionado(e.target.value)}>
+          <Form.Label>Tipo de Movimiento</Form.Label>
+          <Form.Select
+            name="tipo"
+            value={formData.ingreso?.tipo || ""}
+            onChange={(e) =>
+              setFormData((prevData) => ({
+                ...prevData,
+                ingreso: {
+                  ...prevData.ingreso,
+                  tipo: e.target.value,
+                  subtipo: "",
+                  monto: "",
+                },
+              }))
+            }
+          >
             <option value="">Selecciona una opción</option>
-            <option value="efectivo">Efectivo</option>
-            <option value="tarjeta">Tarjeta</option>
+            <option value="Efectivo">Efectivo</option>
+            <option value="Tarjeta">Tarjeta</option>
           </Form.Select>
         </Form.Group>
+        {formData.ingreso?.tipo && (
+          <Form.Group className="mb-3">
+            <Form.Label>Subtipo</Form.Label>
+            <Form.Select
+              name="subtipo"
+              value={formData.ingreso?.subtipo || ""}
+              onChange={(e) =>
+                setFormData((prevData) => ({
+                  ...prevData,
+                  ingreso: { ...prevData.ingreso, subtipo: e.target.value },
+                }))
+              }
+            >
+              <option value="">Selecciona una opción</option>
+              {formData.ingreso.tipo === "Efectivo" && (
+                <>
+                  <option value="Pesos">Pesos</option>
+                  <option value="Dólares">Dólares</option>
+                  <option value="Euros">Euros</option>
+                </>
+              )}
+              {formData.ingreso.tipo === "Tarjeta" && (
+                <>
+                  <option value="Débito/Crédito">Débito/Crédito</option>
+                  <option value="Virtual">Virtual</option>
+                  <option value="Transferencias">Transferencias</option>
+                </>
+              )}
+            </Form.Select>
+          </Form.Group>
+        )}
+        {formData.ingreso?.subtipo && (
+          <Form.Group className="mb-3">
+            <Form.Label>Monto</Form.Label>
+            <Form.Control
+              type="text"
+              name="monto"
+              value={formData.ingreso?.monto || "0,00"} // Valor inicial por defecto
+              onChange={(e) => {
+                let inputValue = e.target.value;
 
-        {/* Ingresos: Efectivo */}
-        {ingresoSeleccionado === "efectivo" && (
-          <fieldset className="mb-4">
-            <legend>Ingresos - Efectivo</legend>
-            <Row>
-              <Col>
-                <Form.Group>
-                  <Form.Label>Pesos</Form.Label>
-                  <Form.Control
-                    type="number"
-                    step="any"
-                    placeholder="Pesos"
-                    onChange={(e) =>
-                      handleIngresosChange(e, "efectivo", "pesos")
-                    }
-                  />
-                </Form.Group>
-              </Col>
-              <Col>
-                <Form.Group>
-                  <Form.Label>Dólares</Form.Label>
-                  <Form.Control
-                    type="number"
-                    step="any"
-                    placeholder="Dólares"
-                    onChange={(e) =>
-                      handleIngresosChange(e, "efectivo", "dolares")
-                    }
-                  />
-                </Form.Group>
-              </Col>
-              <Col>
-                <Form.Group>
-                  <Form.Label>Euros</Form.Label>
-                  <Form.Control
-                    type="number"
-                    step="any"
-                    placeholder="Euros"
-                    onChange={(e) =>
-                      handleIngresosChange(e, "efectivo", "euros")
-                    }
-                  />
-                </Form.Group>
-              </Col>
-            </Row>
-          </fieldset>
+                // Remover cualquier carácter no numérico
+                inputValue = inputValue.replace(/[^0-9]/g, "");
+
+                // Asegurar al menos tres dígitos para manejar decimales correctamente
+                while (inputValue.length < 3) {
+                  inputValue = "0" + inputValue; // Rellenar con ceros al inicio
+                }
+
+                // Separar la parte entera y los decimales
+                const integerPart = inputValue.slice(0, -2); // Parte entera
+                const decimalPart = inputValue.slice(-2); // Últimos 2 dígitos como decimales
+
+                // Formatear la parte entera y eliminar ceros iniciales innecesarios
+                const formattedIntegerPart = integerPart
+                  .replace(/^0+(?!$)/, "")
+                  .replace(/\B(?=(\d{3})+(?!\d))/g, "."); // Sin ceros iniciales
+
+                // Construir el valor formateado
+                const formattedValue = `${
+                  formattedIntegerPart || "0"
+                },${decimalPart}`;
+
+                // Actualizar el estado con el valor formateado
+                setFormData((prevData) => ({
+                  ...prevData,
+                  ingreso: { ...prevData.ingreso, monto: formattedValue },
+                }));
+              }}
+              placeholder="Ingrese el monto (Ej: $1.500,00)"
+            />
+          </Form.Group>
         )}
 
-        {/* Ingresos: Tarjeta */}
-        {ingresoSeleccionado === "tarjeta" && (
-          <fieldset className="mb-4">
-            <legend>Ingresos - Tarjeta</legend>
-            <Row>
-              <Col>
-                <Form.Group>
-                  <Form.Label>Débito/Crédito</Form.Label>
-                  <Form.Control
-                    type="number"
-                    step="any"
-                    placeholder="Tarjeta Débito/Crédito"
-                    onChange={(e) =>
-                      handleIngresosChange(e, "tarjeta", "debitoCredito")
-                    }
-                  />
-                </Form.Group>
-              </Col>
-              <Col>
-                <Form.Group>
-                  <Form.Label>Tarjeta Virtual</Form.Label>
-                  <Form.Control
-                    type="number"
-                    step="any"
-                    placeholder="Virtual"
-                    onChange={(e) =>
-                      handleIngresosChange(e, "tarjeta", "virtual")
-                    }
-                  />
-                </Form.Group>
-              </Col>
-              <Col>
-                <Form.Group>
-                  <Form.Label>Transferencias</Form.Label>
-                  <Form.Control
-                    type="number"
-                    step="any"
-                    placeholder="Transferencias"
-                    onChange={(e) =>
-                      handleIngresosChange(e, "tarjeta", "transferencias")
-                    }
-                  />
-                </Form.Group>
-              </Col>
-            </Row>
-            <Form.Group className="mt-3">
-              <Form.Label>Número de Autorización</Form.Label>
-              <Form.Control
-                type="text"
-                placeholder="Autorización"
-                name="autorizacion"
-                onChange={(e) => {
-                  const valor = e.target.value.toUpperCase();
-                  handleChange({
-                    target: { name: e.target.name, value: valor },
-                  });
-                }}
-              />
-            </Form.Group>
-          </fieldset>
+        {formData.ingreso?.tipo === "Tarjeta" && (
+          <Form.Group className="mb-3">
+            <Form.Label>Autorización</Form.Label>
+            <Form.Control
+              type="text"
+              name="autorizacion"
+              value={formData.autorizacion || ""}
+              onChange={(e) => {
+                const { value } = e.target;
+                setFormData((prevData) => ({
+                  ...prevData,
+                  autorizacion: value, // Actualiza el estado con la autorización ingresada
+                }));
+              }}
+              placeholder="Ingresa el código de autorización"
+            />
+          </Form.Group>
         )}
-
         {/* Fecha de Pago */}
         <Form.Group className="mb-3">
           <Form.Label>Fecha de Pago</Form.Label>
@@ -241,7 +239,6 @@ const MovementForm = () => {
             className="form-control"
           />
         </Form.Group>
-
         {/* Número y Tipo de Habitación */}
         <Form.Group className="mb-3">
           <Form.Label>Número de Habitación</Form.Label>
@@ -262,7 +259,6 @@ const MovementForm = () => {
             readOnly
           />
         </Form.Group>
-
         {/* Nombre */}
         <Form.Group className="mb-3">
           <Form.Label>Nombre</Form.Label>
@@ -273,7 +269,6 @@ const MovementForm = () => {
             onChange={handleChange}
           />
         </Form.Group>
-
         {/* Fechas de Check-In y Check-Out */}
         <Row>
           <Col>
@@ -301,7 +296,6 @@ const MovementForm = () => {
             </Form.Group>
           </Col>
         </Row>
-
         {/* OTA */}
         <Form.Group className="mb-3">
           <Form.Label>OTA</Form.Label>
@@ -312,7 +306,6 @@ const MovementForm = () => {
             <option value="Directa">Directa</option>
           </Form.Select>
         </Form.Group>
-
         {/* Concepto */}
         <Form.Group className="mb-3">
           <Form.Label>Concepto</Form.Label>
@@ -322,7 +315,6 @@ const MovementForm = () => {
             <option value="Amenidades">Amenidades</option>
           </Form.Select>
         </Form.Group>
-
         {/* Botón de Envío */}
         <Button type="submit" variant="primary" className="w-100">
           Registrar Movimiento

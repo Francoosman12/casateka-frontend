@@ -2,13 +2,19 @@ import React from "react";
 import { Container, Table, Row, Col, Card } from "react-bootstrap";
 
 const CashData = ({ data }) => {
-  // Filtrar los datos por concepto (Estancia y Amenidades)
+  // Filtrar los datos por concepto (Estancia y Amenidades) para efectivo en pesos
   const efectivoPesosEstancia = data.filter(
     (item) =>
-      item.ingresos.efectivo.pesos > 0 && item.concepto === "Cobro de estancia"
+      item.ingreso?.tipo === "Efectivo" &&
+      item.ingreso?.subtipo === "Pesos" &&
+      item.concepto === "Cobro de estancia"
   );
+
   const efectivoPesosAmenidades = data.filter(
-    (item) => item.ingresos.efectivo.pesos > 0 && item.concepto === "Amenidades"
+    (item) =>
+      item.ingreso?.tipo === "Efectivo" &&
+      item.ingreso?.subtipo === "Pesos" &&
+      item.concepto === "Amenidades"
   );
 
   // Agrupar los datos por OTA (Booking, Expedia, Directa)
@@ -25,10 +31,14 @@ const CashData = ({ data }) => {
 
   // Función para calcular el subtotal de un array
   const calculateSubtotal = (items) => {
-    return items.reduce(
-      (total, item) => total + (item.ingresos.efectivo.pesos || 0),
-      0
-    );
+    return items
+      .reduce((total, item) => {
+        const monto = parseFloat(
+          item.ingreso?.monto.replace(/\./g, "").replace(",", ".") || "0"
+        );
+        return total + monto;
+      }, 0)
+      .toLocaleString("es-MX", { style: "currency", currency: "MXN" });
   };
 
   return (
@@ -70,11 +80,11 @@ const CashData = ({ data }) => {
                       <td>{index + 1}</td>
                       <td>{new Date(item.fechaPago).toLocaleDateString()}</td>
                       <td>{item.nombre}</td>
-                      <td>{item.habitacion.numero}</td>
-                      <td>{item.habitacion.tipo}</td>
+                      <td>{item.habitacion?.numero || "N/A"}</td>
+                      <td>{item.habitacion?.tipo || "N/A"}</td>
                       <td>{new Date(item.checkIn).toLocaleDateString()}</td>
                       <td>{new Date(item.checkOut).toLocaleDateString()}</td>
-                      <td>${item.ingresos.efectivo.pesos}</td>
+                      <td>{item.ingreso?.monto || "$0,00"}</td>
                     </tr>
                   ))}
                   {/* Subtotal */}
@@ -83,7 +93,7 @@ const CashData = ({ data }) => {
                       Subtotal:
                     </td>
                     <td className="fw-bold">
-                      ${calculateSubtotal(groupedEstancia[ota])}
+                      {calculateSubtotal(groupedEstancia[ota])}
                     </td>
                   </tr>
                 </tbody>
@@ -115,7 +125,7 @@ const CashData = ({ data }) => {
                     <td>{new Date(item.fechaPago).toLocaleDateString()}</td>
                     <td>{item.nombre}</td>
                     <td>{item.concepto}</td>
-                    <td>${item.ingresos.efectivo.pesos}</td>
+                    <td>{item.ingreso?.monto || "$0,00"}</td>
                   </tr>
                 ))}
                 {/* Subtotal */}
@@ -124,7 +134,7 @@ const CashData = ({ data }) => {
                     Subtotal:
                   </td>
                   <td className="fw-bold">
-                    ${calculateSubtotal(efectivoPesosAmenidades)}
+                    {calculateSubtotal(efectivoPesosAmenidades)}
                   </td>
                 </tr>
               </tbody>

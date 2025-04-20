@@ -2,18 +2,22 @@ import React from "react";
 import { Container, Table, Row, Col, Card } from "react-bootstrap";
 
 const CashEuroData = ({ data }) => {
-  // Filtrar los movimientos por ingresos en euros y concepto
+  // Filtrar movimientos en efectivo en euros por concepto de estancia y amenidades
   const efectivoEurosEstancia = data.filter(
     (item) =>
-      item.ingresos?.efectivo?.euros > 0 &&
+      item.ingreso?.tipo === "Efectivo" &&
+      item.ingreso?.subtipo === "Euros" &&
       item.concepto === "Cobro de estancia"
   );
+
   const efectivoEurosAmenidades = data.filter(
     (item) =>
-      item.ingresos?.efectivo?.euros > 0 && item.concepto === "Amenidades"
+      item.ingreso?.tipo === "Efectivo" &&
+      item.ingreso?.subtipo === "Euros" &&
+      item.concepto === "Amenidades"
   );
 
-  // Agrupar los movimientos por OTA
+  // Agrupar los movimientos por OTA (Booking, Expedia, Directa, etc.)
   const groupByOTA = (items) => {
     return items.reduce((grouped, item) => {
       const key = item.ota || "Sin OTA"; // Usar "Sin OTA" si el valor de OTA está vacío
@@ -27,10 +31,14 @@ const CashEuroData = ({ data }) => {
 
   // Función para calcular el subtotal
   const calculateSubtotal = (items) => {
-    return items.reduce(
-      (total, item) => total + (item.ingresos?.efectivo?.euros || 0),
-      0
-    );
+    return items
+      .reduce((total, item) => {
+        const monto = parseFloat(
+          item.ingreso?.monto.replace(/\./g, "").replace(",", ".") || "0"
+        );
+        return total + monto;
+      }, 0)
+      .toLocaleString("es-ES", { style: "currency", currency: "EUR" }); // Formateo con moneda
   };
 
   return (
@@ -76,7 +84,7 @@ const CashEuroData = ({ data }) => {
                       <td>{item.habitacion?.tipo || "N/A"}</td>
                       <td>{new Date(item.checkIn).toLocaleDateString()}</td>
                       <td>{new Date(item.checkOut).toLocaleDateString()}</td>
-                      <td>€{item.ingresos?.efectivo?.euros || 0}</td>
+                      <td>{item.ingreso?.monto || "€0.00"}</td>
                     </tr>
                   ))}
                   {/* Subtotal */}
@@ -85,7 +93,7 @@ const CashEuroData = ({ data }) => {
                       Subtotal:
                     </td>
                     <td className="fw-bold">
-                      €{calculateSubtotal(groupedEstancia[ota])}
+                      {calculateSubtotal(groupedEstancia[ota])}
                     </td>
                   </tr>
                 </tbody>
@@ -117,7 +125,7 @@ const CashEuroData = ({ data }) => {
                     <td>{new Date(item.fechaPago).toLocaleDateString()}</td>
                     <td>{item.nombre}</td>
                     <td>{item.concepto}</td>
-                    <td>€{item.ingresos?.efectivo?.euros || 0}</td>
+                    <td>{item.ingreso?.monto || "€0.00"}</td>
                   </tr>
                 ))}
                 {/* Subtotal */}
@@ -126,7 +134,7 @@ const CashEuroData = ({ data }) => {
                     Subtotal:
                   </td>
                   <td className="fw-bold">
-                    €{calculateSubtotal(efectivoEurosAmenidades)}
+                    {calculateSubtotal(efectivoEurosAmenidades)}
                   </td>
                 </tr>
               </tbody>

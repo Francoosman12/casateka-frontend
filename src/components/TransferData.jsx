@@ -5,12 +5,15 @@ const TransferData = ({ data }) => {
   // Filtrar los datos relacionados con transferencias por concepto
   const transferenciasEstancia = data.filter(
     (item) =>
-      item.ingresos?.tarjeta?.transferencias > 0 &&
+      item.ingreso?.tipo === "Tarjeta" &&
+      item.ingreso?.subtipo === "Transferencias" &&
       item.concepto === "Cobro de estancia"
   );
+
   const transferenciasAmenidades = data.filter(
     (item) =>
-      item.ingresos?.tarjeta?.transferencias > 0 &&
+      item.ingreso?.tipo === "Tarjeta" &&
+      item.ingreso?.subtipo === "Transferencias" &&
       item.concepto === "Amenidades"
   );
 
@@ -28,10 +31,14 @@ const TransferData = ({ data }) => {
 
   // Función para calcular el subtotal de transferencias
   const calculateSubtotal = (items) => {
-    return items.reduce(
-      (total, item) => total + (item.ingresos?.tarjeta?.transferencias || 0),
-      0
-    );
+    return items
+      .reduce((total, item) => {
+        const monto = parseFloat(
+          item.ingreso?.monto.replace(/\./g, "").replace(",", ".") || "0"
+        );
+        return total + monto;
+      }, 0)
+      .toLocaleString("es-MX", { style: "currency", currency: "MXN" }); // Formateo con moneda
   };
 
   return (
@@ -79,7 +86,7 @@ const TransferData = ({ data }) => {
                       <td>{new Date(item.checkIn).toLocaleDateString()}</td>
                       <td>{new Date(item.checkOut).toLocaleDateString()}</td>
                       <td>{item.autorizacion || "N/A"}</td>
-                      <td>${item.ingresos?.tarjeta?.transferencias || 0}</td>
+                      <td>{item.ingreso?.monto || "$0.00"}</td>
                     </tr>
                   ))}
                   {/* Subtotal */}
@@ -88,7 +95,7 @@ const TransferData = ({ data }) => {
                       Subtotal:
                     </td>
                     <td className="fw-bold">
-                      ${calculateSubtotal(groupedEstancia[ota])}
+                      {calculateSubtotal(groupedEstancia[ota])}
                     </td>
                   </tr>
                 </tbody>
@@ -122,7 +129,7 @@ const TransferData = ({ data }) => {
                     <td>{item.nombre}</td>
                     <td>{item.concepto}</td>
                     <td>{item.autorizacion || "N/A"}</td>
-                    <td>${item.ingresos?.tarjeta?.transferencias || 0}</td>
+                    <td>{item.ingreso?.monto || "$0.00"}</td>
                   </tr>
                 ))}
                 {/* Subtotal */}
@@ -131,7 +138,7 @@ const TransferData = ({ data }) => {
                     Subtotal:
                   </td>
                   <td className="fw-bold">
-                    ${calculateSubtotal(transferenciasAmenidades)}
+                    {calculateSubtotal(transferenciasAmenidades)}
                   </td>
                 </tr>
               </tbody>
