@@ -8,12 +8,13 @@ export const exportToExcel = (filteredData) => {
   // Agregar espaciadores entre tablas
   const addSpacer = () => sheetData.push([]);
 
+
   // Función para agregar cada tabla con más detalles y subtotales
   const addTable = (title, data, columns) => {
     sheetData.push([title]); // Título de la tabla
     sheetData.push(columns); // Encabezados
-    let subtotal = 0; // Inicializar subtotal
-
+    let subtotal = 0; // Inicializar subtotal como valor numérico
+  
     data.forEach((item) => {
       const row = columns.map((col) => {
         switch (col) {
@@ -42,16 +43,9 @@ export const exportToExcel = (filteredData) => {
             return item.ota || "Sin OTA";
           }
           case "Importe": {
-            const importe =
-              item.ingresos?.efectivo?.pesos ||
-              item.ingresos?.efectivo?.dolares ||
-              item.ingresos?.efectivo?.euros ||
-              item.ingresos?.tarjeta?.debitoCredito ||
-              item.ingresos?.tarjeta?.virtual ||
-              item.ingresos?.tarjeta?.transferencias ||
-              0;
-            subtotal += importe; // Acumular subtotal
-            return importe;
+            const monto = item.ingreso?.monto || "0,00"; // Tomar el monto tal cual está
+            subtotal += parseFloat(monto.replace(/\./g, "").replace(",", ".") || "0"); // Convertir el monto a numérico para sumar
+            return monto; // Mostrar el monto original
           }
           case "Concepto": {
             return item.concepto || "N/A";
@@ -63,73 +57,61 @@ export const exportToExcel = (filteredData) => {
       });
       sheetData.push(row); // Agregar fila a la tabla
     });
-    // Agregar fila de subtotal
-    const subtotalRow = columns.map((col) => (col === "Importe" ? subtotal : col === "" ? "" : ""));
-    subtotalRow[0] = "Subtotal:"; // Agregar texto "Subtotal" en la primera celda
+  
+    // Mostrar el subtotal en el mismo formato que los importes
+    const subtotalRow = columns.map((col) =>
+      col === "Importe" ? subtotal.toFixed(2).replace(/\./g, ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".") : ""
+    );
+    subtotalRow[0] = "Subtotal:"; // Etiqueta para subtotal
     sheetData.push(subtotalRow);
     addSpacer(); // Separar tablas
   };
 
-  // Función para agregar únicamente los totales relevantes
+  //ADD TOTALS
+  
   const addTotals = () => {
     sheetData.push(["Concepto", "Total"]); // Encabezados de la tabla
-
-    // Calcular totales basados en Totals.jsx
-    const totalEfectivoMXN = filteredData.reduce((total, item) => total + (item.ingresos?.efectivo?.pesos || 0), 0);
-    const totalEfectivoUSD = filteredData.reduce((total, item) => total + (item.ingresos?.efectivo?.dolares || 0), 0);
-    const totalEfectivoEUR = filteredData.reduce((total, item) => total + (item.ingresos?.efectivo?.euros || 0), 0);
-    const totalDebitoCredito = filteredData.reduce((total, item) => total + (item.ingresos?.tarjeta?.debitoCredito || 0), 0);
-    const totalTarjetasVirtuales = filteredData.reduce((total, item) => total + (item.ingresos?.tarjeta?.virtual || 0), 0);
-    const totalTransferencias = filteredData.reduce((total, item) => total + (item.ingresos?.tarjeta?.transferencias || 0), 0);
-
+  
+    const totalEfectivo = filteredData
+      .filter((item) => item.ingreso.tipo === "Efectivo")
+      .reduce((total, item) => total + parseFloat(item.ingreso?.monto.replace(/\./g, "").replace(",", ".") || "0"), 0);
+  
+    const totalTarjeta = filteredData
+      .filter((item) => item.ingreso.tipo === "Tarjeta")
+      .reduce((total, item) => total + parseFloat(item.ingreso?.monto.replace(/\./g, "").replace(",", ".") || "0"), 0);
+  
     const totalEstancia = filteredData
       .filter((item) => item.concepto === "Cobro de estancia")
-      .reduce((total, item) => {
-        return (
-          total +
-          (item.ingresos?.efectivo?.pesos || 0) +
-          (item.ingresos?.efectivo?.dolares || 0) +
-          (item.ingresos?.efectivo?.euros || 0) +
-          (item.ingresos?.tarjeta?.debitoCredito || 0) +
-          (item.ingresos?.tarjeta?.virtual || 0) +
-          (item.ingresos?.tarjeta?.transferencias || 0)
-        );
-      }, 0);
-
+      .reduce((total, item) => total + parseFloat(item.ingreso?.monto.replace(/\./g, "").replace(",", ".") || "0"), 0);
+  
     const totalAmenidades = filteredData
       .filter((item) => item.concepto === "Amenidades")
-      .reduce((total, item) => {
-        return (
-          total +
-          (item.ingresos?.efectivo?.pesos || 0) +
-          (item.ingresos?.efectivo?.dolares || 0) +
-          (item.ingresos?.efectivo?.euros || 0) +
-          (item.ingresos?.tarjeta?.debitoCredito || 0) +
-          (item.ingresos?.tarjeta?.virtual || 0) +
-          (item.ingresos?.tarjeta?.transferencias || 0)
-        );
-      }, 0);
-
+      .reduce((total, item) => total + parseFloat(item.ingreso?.monto.replace(/\./g, "").replace(",", ".") || "0"), 0);
+  
+    const totalBooking = filteredData
+      .filter((item) => item.ota === "Booking")
+      .reduce((total, item) => total + parseFloat(item.ingreso?.monto.replace(/\./g, "").replace(",", ".") || "0"), 0);
+  
+    const totalExpedia = filteredData
+      .filter((item) => item.ota === "Expedia")
+      .reduce((total, item) => total + parseFloat(item.ingreso?.monto.replace(/\./g, "").replace(",", ".") || "0"), 0);
+  
+    const totalDirecta = filteredData
+      .filter((item) => item.ota === "Directa")
+      .reduce((total, item) => total + parseFloat(item.ingreso?.monto.replace(/\./g, "").replace(",", ".") || "0"), 0);
+  
     const totalGeneral = totalEstancia + totalAmenidades;
-
-    const totalNoches = filteredData
-      .filter((item) => item.concepto === "Cobro de estancia")
-      .reduce((total, item) => total + (item.noches || 0), 0);
-
-    const tarifaPromedioPorNoche = totalNoches > 0 ? totalEstancia / totalNoches : 0;
-
-    // Agregar filas con cada concepto y su total
-    sheetData.push(["Efectivo MXN", totalEfectivoMXN]);
-    sheetData.push(["Efectivo USD", totalEfectivoUSD]);
-    sheetData.push(["Efectivo EUR", totalEfectivoEUR]);
-    sheetData.push(["Tarjeta Débito/Crédito", totalDebitoCredito]);
-    sheetData.push(["Tarjetas Virtuales", totalTarjetasVirtuales]);
-    sheetData.push(["Transferencias", totalTransferencias]);
-    sheetData.push(["Cobro de Estancia", totalEstancia]);
-    sheetData.push(["Amenidades", totalAmenidades]);
-    sheetData.push(["Total General", totalGeneral]);
-    sheetData.push(["Promedio por Noche", tarifaPromedioPorNoche.toFixed(2)]);
-
+  
+    // Agregar filas con cada concepto y su total, en el formato deseado
+    sheetData.push(["Efectivo", totalEfectivo.toFixed(2).replace(/\./g, ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".")]);
+    sheetData.push(["Tarjeta", totalTarjeta.toFixed(2).replace(/\./g, ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".")]);
+    sheetData.push(["Cobro de Estancia", totalEstancia.toFixed(2).replace(/\./g, ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".")]);
+    sheetData.push(["Amenidades", totalAmenidades.toFixed(2).replace(/\./g, ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".")]);
+    sheetData.push(["Booking", totalBooking.toFixed(2).replace(/\./g, ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".")]);
+    sheetData.push(["Expedia", totalExpedia.toFixed(2).replace(/\./g, ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".")]);
+    sheetData.push(["Directa", totalDirecta.toFixed(2).replace(/\./g, ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".")]);
+    sheetData.push(["Total General", totalGeneral.toFixed(2).replace(/\./g, ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".")]);
+  
     addSpacer(); // Agregar espaciador después de los totales
   };
 
@@ -138,37 +120,37 @@ export const exportToExcel = (filteredData) => {
 
   addTable(
     "Cash Data",
-    filteredData.filter((item) => item.ingresos?.efectivo?.pesos > 0),
+    filteredData.filter((item) => item.ingreso.tipo === "Efectivo" && item.ingreso.subtipo === "Pesos"),
     ["Fecha de Pago", "Nombre", "Habitación", "Tipo de Habitación", "OTA", "Importe", "Concepto"]
   );
 
   addTable(
     "Cash Dollar Data",
-    filteredData.filter((item) => item.ingresos?.efectivo?.dolares > 0),
+    filteredData.filter((item) => item.ingreso.tipo === "Efectivo" && item.ingreso.subtipo === "Dólares"),
     ["Fecha de Pago", "Nombre", "Habitación", "Tipo de Habitación", "OTA", "Importe", "Concepto"]
   );
 
   addTable(
     "Cash Euro Data",
-    filteredData.filter((item) => item.ingresos?.efectivo?.euros > 0),
+    filteredData.filter((item) => item.ingreso.tipo === "Efectivo" && item.ingreso.subtipo === "Euros"),
     ["Fecha de Pago", "Nombre", "Habitación", "Tipo de Habitación", "OTA", "Importe", "Concepto"]
   );
 
   addTable(
     "Card Data",
-    filteredData.filter((item) => item.ingresos?.tarjeta?.debitoCredito > 0),
+    filteredData.filter((item) => item.ingreso.tipo === "Tarjeta" && item.ingreso.subtipo === "Débito/Crédito"),
     ["Fecha de Pago", "Nombre", "Habitación", "Tipo de Habitación", "Autorización", "OTA", "Importe", "Concepto"]
   );
 
   addTable(
     "Virtual Card Data",
-    filteredData.filter((item) => item.ingresos?.tarjeta?.virtual > 0),
+    filteredData.filter((item) => item.ingreso.tipo === "Tarjeta" && item.ingreso.subtipo === "Virtual"),
     ["Fecha de Pago", "Nombre", "Habitación", "Tipo de Habitación", "Autorización", "OTA", "Importe", "Concepto"]
   );
 
   addTable(
     "Transfer Data",
-    filteredData.filter((item) => item.ingresos?.tarjeta?.transferencias > 0),
+    filteredData.filter((item) => item.ingreso.tipo === "Tarjeta" && item.ingreso.subtipo === "Transferencias"),
     ["Fecha de Pago", "Nombre", "Habitación", "Tipo de Habitación", "Autorización", "OTA", "Importe", "Concepto"]
   );
 
