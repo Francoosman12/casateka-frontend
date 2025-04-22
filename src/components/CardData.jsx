@@ -44,9 +44,9 @@ const CardData = ({ data }) => {
   return (
     <Container className="mt-5 mb-5">
       {/* Encabezado */}
-      <Card className="bg-primary">
+      <Card className="bg-dark">
         <Card.Body>
-          <Card.Title className="text-center text-white bg-primary">
+          <Card.Title className="text-center text-white bg-dark">
             Ingreso por Tarjeta de Crédito/Débito
           </Card.Title>
         </Card.Body>
@@ -55,7 +55,7 @@ const CardData = ({ data }) => {
       {/* Tabla de Estancia */}
       <Row className="mb-5 mt-3">
         <Col>
-          <h3 className="text-primary">Estancia</h3>
+          <h3 className="text-dark">Estancia</h3>
           {Object.keys(groupedEstancia).map((ota) => (
             <Card className="mb-4" key={ota}>
               <Card.Header className="bg-light text-dark">
@@ -108,7 +108,7 @@ const CardData = ({ data }) => {
       {/* Tabla de Amenidades */}
       <Row>
         <Col>
-          <h3 className="text-primary">Amenidades</h3>
+          <h3 className="text-dark">Amenidades</h3>
           <Card>
             <Table striped bordered hover>
               <thead>

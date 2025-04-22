@@ -114,6 +114,18 @@ const Totals = ({ data }) => {
       );
     }, 0);
 
+  // Contar el número total de habitaciones ocupadas como noches vendidas
+  const totalNochesVendidas = data
+    .filter((item) => item.concepto === "Cobro de estancia") // Filtrar solo estadías
+    .reduce((total, item) => {
+      const checkInDate = new Date(item.checkIn);
+      const checkOutDate = new Date(item.checkOut);
+
+      // Calcular la cantidad de noches restando las fechas
+      const noches = (checkOutDate - checkInDate) / (1000 * 60 * 60 * 24); // Convertir ms a días
+      return total + noches;
+    }, 0);
+
   return (
     <Container className="mt-5">
       <Card className="mb-4">
@@ -310,6 +322,10 @@ const Totals = ({ data }) => {
                     currency: "MXN",
                   })}
                 </td>
+              </tr>
+              <tr>
+                <td>Total de Noches Vendidas</td>
+                <td>{totalNochesVendidas.toLocaleString("es-MX")}</td>
               </tr>
             </tbody>
           </Table>
