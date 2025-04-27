@@ -31,14 +31,35 @@ const TransferData = ({ data }) => {
 
   // Función para calcular el subtotal de transferencias
   const calculateSubtotal = (items) => {
-    return items
-      .reduce((total, item) => {
-        const monto = parseFloat(
-          item.ingreso?.monto.replace(/\./g, "").replace(",", ".") || "0"
-        );
-        return total + monto;
-      }, 0)
-      .toLocaleString("es-MX", { style: "currency", currency: "MXN" }); // Formateo con moneda
+    console.log("Datos filtrados antes del cálculo:", items);
+    console.log(
+      "Montos extraídos:",
+      items.map((i) => i.ingreso?.montoTotal)
+    );
+    console.log("Cantidad de elementos:", items.length);
+
+    const total = items.reduce((sum, item) => {
+      let rawMonto = item.ingreso?.montoTotal || "0.00";
+      console.log("Procesando montoTotal antes de conversión:", rawMonto);
+
+      // ✅ **Eliminar puntos de separación de miles, convertir a número directamente**
+      const montoConvertido = Number(rawMonto.replace(/,/g, "")) || 0;
+      console.log("Monto final procesado:", montoConvertido);
+
+      return sum + montoConvertido;
+    }, 0);
+
+    // ✅ **Aplicar formato con separador de miles antes de devolver**
+    const formattedTotal = new Intl.NumberFormat("es-MX", {
+      style: "currency",
+      currency: "MXN",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(total);
+
+    console.log("Subtotal final con formato:", formattedTotal);
+
+    return formattedTotal;
   };
 
   return (
@@ -77,17 +98,49 @@ const TransferData = ({ data }) => {
                 </thead>
                 <tbody>
                   {groupedEstancia[ota].map((item, index) => (
-                    <tr key={item._id}>
-                      <td>{index + 1}</td>
-                      <td>{new Date(item.fechaPago).toLocaleDateString()}</td>
-                      <td>{item.nombre}</td>
-                      <td>{item.habitacion?.numero || "N/A"}</td>
-                      <td>{item.habitacion?.tipo || "N/A"}</td>
-                      <td>{new Date(item.checkIn).toLocaleDateString()}</td>
-                      <td>{new Date(item.checkOut).toLocaleDateString()}</td>
-                      <td>{item.autorizacion || "N/A"}</td>
-                      <td>{item.ingreso?.monto || "$0.00"}</td>
-                    </tr>
+                    <>
+                      {/* Primera fila: Datos generales + primera autorización */}
+                      <tr key={`${item._id}-main`}>
+                        <td rowSpan={item.ingreso?.autorizaciones?.length || 1}>
+                          {index + 1}
+                        </td>
+                        <td rowSpan={item.ingreso?.autorizaciones?.length || 1}>
+                          {new Date(item.fechaPago).toLocaleDateString()}
+                        </td>
+                        <td rowSpan={item.ingreso?.autorizaciones?.length || 1}>
+                          {item.nombre}
+                        </td>
+                        <td rowSpan={item.ingreso?.autorizaciones?.length || 1}>
+                          {item.habitacion?.numero || "N/A"}
+                        </td>
+                        <td rowSpan={item.ingreso?.autorizaciones?.length || 1}>
+                          {item.habitacion?.tipo || "N/A"}
+                        </td>
+                        <td rowSpan={item.ingreso?.autorizaciones?.length || 1}>
+                          {new Date(item.checkIn).toLocaleDateString()}
+                        </td>
+                        <td rowSpan={item.ingreso?.autorizaciones?.length || 1}>
+                          {new Date(item.checkOut).toLocaleDateString()}
+                        </td>
+                        <td>
+                          {item.ingreso?.autorizaciones?.[0]?.codigo || "N/A"}
+                        </td>{" "}
+                        {/* ✅ Primera autorización */}
+                        <td>
+                          {item.ingreso?.autorizaciones?.[0]?.monto || "$0.00"}
+                        </td>{" "}
+                        {/* ✅ Primer monto */}
+                      </tr>
+                      {/* Filas adicionales para más autorizaciones */}
+                      {item.ingreso?.autorizaciones
+                        ?.slice(1)
+                        .map((autorizacion, authIndex) => (
+                          <tr key={`${item._id}-auth-${authIndex}`}>
+                            <td>{autorizacion.codigo}</td>
+                            <td>{autorizacion.monto}</td>
+                          </tr>
+                        ))}
+                    </>
                   ))}
                   {/* Subtotal */}
                   <tr className="bg-light">
@@ -116,25 +169,61 @@ const TransferData = ({ data }) => {
                   <th>No.</th>
                   <th>Fecha de Pago</th>
                   <th>Nombre</th>
-                  <th>Descripción</th>
+                  <th>Habitación</th>
+                  <th>Tipo de Habitación</th>
+                  <th>Check-In</th>
+                  <th>Check-Out</th>
                   <th>Autorización</th>
                   <th>Importe</th>
                 </tr>
               </thead>
               <tbody>
                 {transferenciasAmenidades.map((item, index) => (
-                  <tr key={item._id}>
-                    <td>{index + 1}</td>
-                    <td>{new Date(item.fechaPago).toLocaleDateString()}</td>
-                    <td>{item.nombre}</td>
-                    <td>{item.concepto}</td>
-                    <td>{item.autorizacion || "N/A"}</td>
-                    <td>{item.ingreso?.monto || "$0.00"}</td>
-                  </tr>
+                  <>
+                    {/* Primera fila: Datos generales + primera autorización */}
+                    <tr key={`${item._id}-main`}>
+                      <td rowSpan={item.ingreso?.autorizaciones?.length || 1}>
+                        {index + 1}
+                      </td>
+                      <td rowSpan={item.ingreso?.autorizaciones?.length || 1}>
+                        {new Date(item.fechaPago).toLocaleDateString()}
+                      </td>
+                      <td rowSpan={item.ingreso?.autorizaciones?.length || 1}>
+                        {item.nombre}
+                      </td>
+                      <td rowSpan={item.ingreso?.autorizaciones?.length || 1}>
+                        {item.habitacion?.numero || "N/A"}
+                      </td>
+                      <td rowSpan={item.ingreso?.autorizaciones?.length || 1}>
+                        {item.habitacion?.tipo || "N/A"}
+                      </td>
+                      <td rowSpan={item.ingreso?.autorizaciones?.length || 1}>
+                        {new Date(item.checkIn).toLocaleDateString()}
+                      </td>
+                      <td rowSpan={item.ingreso?.autorizaciones?.length || 1}>
+                        {new Date(item.checkOut).toLocaleDateString()}
+                      </td>
+                      <td>
+                        {item.ingreso?.autorizaciones?.[0]?.codigo || "N/A"}
+                      </td>
+                      <td>
+                        {item.ingreso?.autorizaciones?.[0]?.monto || "$0.00"}
+                      </td>
+                    </tr>
+                    {/* Filas adicionales para más autorizaciones */}
+                    {item.ingreso?.autorizaciones
+                      ?.slice(1)
+                      .map((autorizacion, authIndex) => (
+                        <tr key={`${item._id}-auth-${authIndex}`}>
+                          <td>{autorizacion.codigo}</td>
+                          <td>{autorizacion.monto}</td>
+                        </tr>
+                      ))}
+                  </>
                 ))}
                 {/* Subtotal */}
                 <tr className="bg-light">
-                  <td colSpan="5" className="text-end fw-bold">
+                  <td colSpan="8" className="text-end fw-bold">
                     Subtotal:
                   </td>
                   <td className="fw-bold">

@@ -6,9 +6,11 @@ import "react-datepicker/dist/react-datepicker.css";
 
 const MovementForm = () => {
   const [formData, setFormData] = useState({
-    ingresos: {
-      efectivo: { pesos: "", dolares: "", euros: "" },
-      tarjeta: { debitoCredito: "", virtual: "", transferencias: "" },
+    ingreso: {
+      tipo: "",
+      subtipo: "",
+      montoTotal: "0,00", // ✅ Agregado aquí
+      autorizaciones: [{ codigo: "", monto: "" }],
     },
     fechaPago: null,
     nombre: "",
@@ -16,7 +18,6 @@ const MovementForm = () => {
     checkIn: null,
     checkOut: null,
     ota: "",
-    autorizacion: "",
     concepto: "",
   });
 
@@ -72,19 +73,52 @@ const MovementForm = () => {
       },
     }));
   };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    let montoTotal = 0;
+
+    if (formData.ingreso?.tipo === "Tarjeta") {
+      montoTotal = formData.ingreso.autorizaciones.reduce(
+        (total, autorizacion) => {
+          let montoLimpio = autorizacion.monto
+            .replace(/\./g, "")
+            .replace(",", ".");
+          return total + parseFloat(montoLimpio || "0");
+        },
+        0
+      );
+    } else {
+      montoTotal = parseFloat(
+        formData.ingreso?.montoTotal.replace(/\./g, "").replace(",", ".") || "0"
+      );
+    }
+
+    // **Convertir a formato de presentación antes de enviar al backend**
+    const formattedMontoTotal = new Intl.NumberFormat("es-MX", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(montoTotal);
+
+    console.log("Monto Total que se enviará:", formattedMontoTotal);
+
     try {
       const response = await axios.post(`${backendUrl}/api/movements`, {
         ...formData,
         ingreso: {
-          tipo: formData.ingreso.tipo,
-          subtipo: formData.ingreso.subtipo,
-          monto: formData.ingreso.monto, // Valor formateado se envía directamente
+          tipo: formData.ingreso?.tipo || "Tarjeta",
+          subtipo: formData.ingreso?.subtipo || "",
+          montoTotal: formattedMontoTotal, // Ahora con separación de miles y dos decimales
+          autorizaciones:
+            formData.ingreso?.tipo === "Tarjeta"
+              ? formData.ingreso.autorizaciones
+              : [],
         },
       });
+
       alert("Movimiento registrado con éxito");
-      resetForm(); // Reinicia el formulario
+      resetForm();
     } catch (error) {
       console.error("Error al registrar el movimiento:", error.message);
       alert("Hubo un problema al registrar el movimiento.");
@@ -93,19 +127,16 @@ const MovementForm = () => {
 
   const resetForm = () => {
     setFormData({
-      ingresos: {
-        efectivo: { pesos: "", dolares: "", euros: "" },
-        tarjeta: { debitoCredito: "", virtual: "", transferencias: "" },
-      },
+      ingreso: { tipo: "", subtipo: "", montoTotal: "", autorizaciones: [] }, // Reseteo completo de ingreso
       fechaPago: null,
       nombre: "",
       habitacion: { numero: "", tipo: "" },
       checkIn: null,
       checkOut: null,
       ota: "",
-      autorizacion: "",
       concepto: "",
     });
+
     setIngresoSeleccionado(""); // Reinicia ingresoSeleccionado si aplica
   };
 
@@ -126,7 +157,11 @@ const MovementForm = () => {
                   ...prevData.ingreso,
                   tipo: e.target.value,
                   subtipo: "",
-                  monto: "",
+                  montoTotal: "", // Asegurar que se resetee al cambiar el tipo
+                  autorizaciones:
+                    e.target.value === "Tarjeta"
+                      ? [{ codigo: "", monto: "0,00" }]
+                      : [], // Ajuste dinámico
                 },
               }))
             }
@@ -136,6 +171,7 @@ const MovementForm = () => {
             <option value="Tarjeta">Tarjeta</option>
           </Form.Select>
         </Form.Group>
+
         {formData.ingreso?.tipo && (
           <Form.Group className="mb-3">
             <Form.Label>Subtipo</Form.Label>
@@ -167,65 +203,141 @@ const MovementForm = () => {
             </Form.Select>
           </Form.Group>
         )}
-        {formData.ingreso?.subtipo && (
+
+        {/* Monto Total cuando el ingreso es Efectivo */}
+        {formData.ingreso?.tipo === "Efectivo" && (
           <Form.Group className="mb-3">
-            <Form.Label>Monto</Form.Label>
+            <Form.Label>Monto Total</Form.Label>
             <Form.Control
               type="text"
-              name="monto"
-              value={formData.ingreso?.monto || "0,00"} // Valor inicial por defecto
+              name="montoTotal"
+              value={formData.ingreso?.montoTotal || "0,00"}
               onChange={(e) => {
-                let inputValue = e.target.value;
+                let inputValue = e.target.value.replace(/[^0-9]/g, "");
 
-                // Remover cualquier carácter no numérico
-                inputValue = inputValue.replace(/[^0-9]/g, "");
-
-                // Asegurar al menos tres dígitos para manejar decimales correctamente
                 while (inputValue.length < 3) {
                   inputValue = "0" + inputValue; // Rellenar con ceros al inicio
                 }
 
-                // Separar la parte entera y los decimales
                 const integerPart = inputValue.slice(0, -2); // Parte entera
                 const decimalPart = inputValue.slice(-2); // Últimos 2 dígitos como decimales
 
-                // Formatear la parte entera y eliminar ceros iniciales innecesarios
                 const formattedIntegerPart = integerPart
                   .replace(/^0+(?!$)/, "")
-                  .replace(/\B(?=(\d{3})+(?!\d))/g, "."); // Sin ceros iniciales
+                  .replace(/\B(?=(\d{3})+(?!\d))/g, "."); // Separación de miles con puntos
 
-                // Construir el valor formateado
                 const formattedValue = `${
                   formattedIntegerPart || "0"
                 },${decimalPart}`;
 
-                // Actualizar el estado con el valor formateado
                 setFormData((prevData) => ({
                   ...prevData,
-                  ingreso: { ...prevData.ingreso, monto: formattedValue },
+                  ingreso: { ...prevData.ingreso, montoTotal: formattedValue },
                 }));
               }}
-              placeholder="Ingrese el monto (Ej: $1.500,00)"
+              placeholder="Ingrese el monto total (Ej: $1.500,00)"
             />
           </Form.Group>
         )}
 
+        {/* Autorizaciones cuando el ingreso es Tarjeta */}
         {formData.ingreso?.tipo === "Tarjeta" && (
           <Form.Group className="mb-3">
-            <Form.Label>Autorización</Form.Label>
-            <Form.Control
-              type="text"
-              name="autorizacion"
-              value={formData.autorizacion || ""}
-              onChange={(e) => {
-                const { value } = e.target;
+            <Form.Label>Autorizaciones</Form.Label>
+            {formData.ingreso.autorizaciones.map((autorizacion, index) => (
+              <Row key={index} className="mb-2">
+                <Col>
+                  <Form.Control
+                    type="text"
+                    placeholder="Código de autorización"
+                    value={autorizacion.codigo}
+                    onChange={(e) => {
+                      const updatedAutorizaciones = [
+                        ...formData.ingreso.autorizaciones,
+                      ];
+                      updatedAutorizaciones[index].codigo = e.target.value;
+                      setFormData((prevData) => ({
+                        ...prevData,
+                        ingreso: {
+                          ...prevData.ingreso,
+                          autorizaciones: updatedAutorizaciones,
+                        },
+                      }));
+                    }}
+                  />
+                </Col>
+                <Col>
+                  <Form.Control
+                    type="text"
+                    placeholder="Monto"
+                    value={autorizacion.monto || "0,00"}
+                    onChange={(e) => {
+                      let inputValue = e.target.value.replace(/[^0-9]/g, "");
+                      while (inputValue.length < 3) {
+                        inputValue = "0" + inputValue;
+                      }
+                      const integerPart = inputValue.slice(0, -2);
+                      const decimalPart = inputValue.slice(-2);
+                      const formattedIntegerPart = integerPart
+                        .replace(/^0+(?!$)/, "")
+                        .replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+                      const formattedValue = `${
+                        formattedIntegerPart || "0"
+                      },${decimalPart}`;
+
+                      const updatedAutorizaciones = [
+                        ...formData.ingreso.autorizaciones,
+                      ];
+                      updatedAutorizaciones[index].monto = formattedValue;
+                      setFormData((prevData) => ({
+                        ...prevData,
+                        ingreso: {
+                          ...prevData.ingreso,
+                          autorizaciones: updatedAutorizaciones,
+                        },
+                      }));
+                    }}
+                  />
+                </Col>
+                <Col xs="auto">
+                  <Button
+                    variant="danger"
+                    onClick={() => {
+                      const updatedAutorizaciones =
+                        formData.ingreso.autorizaciones.filter(
+                          (_, i) => i !== index
+                        );
+                      setFormData((prevData) => ({
+                        ...prevData,
+                        ingreso: {
+                          ...prevData.ingreso,
+                          autorizaciones: updatedAutorizaciones,
+                        },
+                      }));
+                    }}
+                  >
+                    Eliminar
+                  </Button>
+                </Col>
+              </Row>
+            ))}
+            <Button
+              variant="success"
+              onClick={() => {
                 setFormData((prevData) => ({
                   ...prevData,
-                  autorizacion: value, // Actualiza el estado con la autorización ingresada
+                  ingreso: {
+                    ...prevData.ingreso,
+                    autorizaciones: [
+                      ...prevData.ingreso.autorizaciones,
+                      { codigo: "", monto: "0,00" },
+                    ],
+                  },
                 }));
               }}
-              placeholder="Ingresa el código de autorización"
-            />
+            >
+              Agregar Código de Autorización
+            </Button>
           </Form.Group>
         )}
         {/* Fecha de Pago */}

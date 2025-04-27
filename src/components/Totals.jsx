@@ -1,13 +1,14 @@
 import React from "react";
 import { Container, Table, Row, Col, Card } from "react-bootstrap";
 
-const Totals = ({ data }) => {
-  // Cálculo de totales por categoría
+const Totals = ({ data = [] }) => {
+  // Cálculo de totales por categoría usando montoTotal
+
   const totalEfectivoMXN = data.reduce(
     (total, item) =>
       total +
       (item.ingreso?.tipo === "Efectivo" && item.ingreso?.subtipo === "Pesos"
-        ? parseFloat(item.ingreso.monto.replace(/\./g, "").replace(",", "."))
+        ? Number(item.ingreso?.montoTotal.replace(",", "")) || 0 // ✅ Solo quitar coma si existe
         : 0),
     0
   );
@@ -16,7 +17,7 @@ const Totals = ({ data }) => {
     (total, item) =>
       total +
       (item.ingreso?.tipo === "Efectivo" && item.ingreso?.subtipo === "Dólares"
-        ? parseFloat(item.ingreso.monto.replace(/\./g, "").replace(",", "."))
+        ? Number(item.ingreso?.montoTotal.replace(",", "")) || 0
         : 0),
     0
   );
@@ -25,61 +26,90 @@ const Totals = ({ data }) => {
     (total, item) =>
       total +
       (item.ingreso?.tipo === "Efectivo" && item.ingreso?.subtipo === "Euros"
-        ? parseFloat(item.ingreso.monto.replace(/\./g, "").replace(",", "."))
+        ? Number(item.ingreso?.montoTotal.replace(",", "")) || 0
         : 0),
     0
   );
 
-  const totalDebitoCredito = data.reduce(
-    (total, item) =>
-      total +
-      (item.ingreso?.tipo === "Tarjeta" &&
-      item.ingreso?.subtipo === "Débito/Crédito"
-        ? parseFloat(item.ingreso.monto.replace(/\./g, "").replace(",", "."))
-        : 0),
-    0
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat("es-MX", {
+      style: "currency",
+      currency: "MXN",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  };
+
+  const totalDebitoCredito = formatCurrency(
+    data.reduce((total, item) => {
+      if (
+        item.ingreso?.tipo === "Tarjeta" &&
+        item.ingreso?.subtipo === "Débito/Crédito"
+      ) {
+        const montoConvertido =
+          Number(item.ingreso?.montoTotal.replace(/,/g, "")) || 0;
+        return total + montoConvertido;
+      }
+      return total;
+    }, 0)
   );
 
-  const totalTarjetasVirtuales = data.reduce(
-    (total, item) =>
-      total +
-      (item.ingreso?.tipo === "Tarjeta" && item.ingreso?.subtipo === "Virtual"
-        ? parseFloat(item.ingreso.monto.replace(/\./g, "").replace(",", "."))
-        : 0),
-    0
+  const totalTarjetasVirtuales = formatCurrency(
+    data.reduce((total, item) => {
+      if (
+        item.ingreso?.tipo === "Tarjeta" &&
+        item.ingreso?.subtipo === "Virtual"
+      ) {
+        const montoConvertido =
+          Number(item.ingreso?.montoTotal.replace(/,/g, "")) || 0;
+        return total + montoConvertido;
+      }
+      return total;
+    }, 0)
   );
 
-  const totalTransferencias = data.reduce(
-    (total, item) =>
-      total +
-      (item.ingreso?.tipo === "Tarjeta" &&
-      item.ingreso?.subtipo === "Transferencias"
-        ? parseFloat(item.ingreso.monto.replace(/\./g, "").replace(",", "."))
-        : 0),
-    0
+  const totalTransferencias = formatCurrency(
+    data.reduce((total, item) => {
+      if (
+        item.ingreso?.tipo === "Tarjeta" &&
+        item.ingreso?.subtipo === "Transferencias"
+      ) {
+        const montoConvertido =
+          Number(item.ingreso?.montoTotal.replace(/,/g, "")) || 0;
+        return total + montoConvertido;
+      }
+      return total;
+    }, 0)
   );
-
-  // Cálculo del Total General
-  const totalGeneral =
-    totalEfectivoMXN +
-    totalEfectivoUSD +
-    totalEfectivoEUR +
-    totalDebitoCredito +
-    totalTarjetasVirtuales +
-    totalTransferencias;
 
   // Cálculo de totales por OTAs
+
   const calculateOTA = (ota) => {
-    return data
+    const total = data
       .filter(
-        (item) => item.ota === ota && item.concepto === "Cobro de estancia"
+        (item) =>
+          item.ota === ota &&
+          item.concepto === "Cobro de estancia" &&
+          ["Efectivo", "Tarjeta"].includes(item.ingreso?.tipo) // ✅ Incluir ambos tipos
       )
-      .reduce((total, item) => {
-        return (
-          total +
-          parseFloat(item.ingreso.monto.replace(/\./g, "").replace(",", "."))
+      .reduce((sum, item) => {
+        let rawMonto = item.ingreso?.montoTotal || "0";
+        console.log(
+          "Procesando montoTotal antes de conversión para OTA:",
+          rawMonto
         );
+
+        // ✅ **Eliminar los separadores incorrectos antes de la conversión**
+        const montoConvertido = Number(rawMonto.replace(/,/g, "")) || 0;
+        console.log(
+          "Monto final procesado correctamente para OTA:",
+          montoConvertido
+        );
+
+        return sum + montoConvertido;
       }, 0);
+
+    return formatCurrency(total);
   };
 
   const totalBooking = calculateOTA("Booking");
@@ -87,44 +117,90 @@ const Totals = ({ data }) => {
   const totalDirecta = calculateOTA("Directa");
 
   // Calcular el total de estancias
-  const totalEstancia = data
-    .filter((item) => item.concepto === "Cobro de estancia")
-    .reduce((total, item) => {
-      return (
-        total +
-        parseFloat(item.ingreso.monto.replace(/\./g, "").replace(",", "."))
-      );
-    }, 0);
+
+  const totalEstancia = formatCurrency(
+    data
+      .filter((item) => item.concepto === "Cobro de estancia")
+      .reduce((total, item) => {
+        let rawMonto = item.ingreso?.montoTotal || "0";
+        console.log(
+          "Procesando montoTotal antes de conversión en totalEstancia:",
+          rawMonto
+        );
+
+        // ✅ **Eliminar los separadores incorrectos antes de la conversión**
+        const montoConvertido = Number(rawMonto.replace(/,/g, "")) || 0;
+        console.log(
+          "Monto final procesado correctamente en totalEstancia:",
+          montoConvertido
+        );
+
+        return total + montoConvertido;
+      }, 0)
+  );
+
+  //Calcular Amenidades
+  const totalAmenidades = formatCurrency(
+    data
+      .filter((item) => item.concepto === "Amenidades")
+      .reduce((total, item) => {
+        let rawMonto = item.ingreso?.montoTotal || "0";
+        console.log(
+          "Procesando montoTotal antes de conversión en totalAmenidades:",
+          rawMonto
+        );
+
+        // ✅ **Eliminar los separadores incorrectos antes de la conversión**
+        const montoConvertido = Number(rawMonto.replace(/,/g, "")) || 0;
+        console.log(
+          "Monto final procesado correctamente en totalAmenidades:",
+          montoConvertido
+        );
+
+        return total + montoConvertido;
+      }, 0)
+  );
 
   // Calcular el total de noches
   const totalNoches = data
     .filter((item) => item.concepto === "Cobro de estancia")
     .reduce((total, item) => total + (item.noches || 0), 0);
 
-  // Calcular el promedio por noche
-  const tarifaPromedioPorNoche =
-    totalNoches > 0 ? totalEstancia / totalNoches : 0;
-
-  const totalAmenidades = data
-    .filter((item) => item.concepto === "Amenidades")
+  // Calcular el promedio por noche con formato correcto
+  const totalEstanciaRaw = data
+    .filter((item) => item.concepto === "Cobro de estancia")
     .reduce((total, item) => {
-      return (
-        total +
-        parseFloat(item.ingreso.monto.replace(/\./g, "").replace(",", "."))
-      );
+      let rawMonto = item.ingreso?.montoTotal || "0";
+      const montoConvertido = Number(rawMonto.replace(/,/g, "")) || 0;
+      return total + montoConvertido;
     }, 0);
+
+  const tarifaPromedioPorNoche =
+    totalNoches > 0
+      ? formatCurrency(totalEstanciaRaw / totalNoches)
+      : formatCurrency(0);
 
   // Contar el número total de habitaciones ocupadas como noches vendidas
   const totalNochesVendidas = data
-    .filter((item) => item.concepto === "Cobro de estancia") // Filtrar solo estadías
+    .filter((item) => item.concepto === "Cobro de estancia")
     .reduce((total, item) => {
       const checkInDate = new Date(item.checkIn);
       const checkOutDate = new Date(item.checkOut);
-
-      // Calcular la cantidad de noches restando las fechas
-      const noches = (checkOutDate - checkInDate) / (1000 * 60 * 60 * 24); // Convertir ms a días
+      const noches = (checkOutDate - checkInDate) / (1000 * 60 * 60 * 24);
       return total + noches;
     }, 0);
+
+  // Cálculo del Total General
+
+  const totalGeneralRaw =
+    (totalEfectivoMXN ?? 0) +
+    (totalEfectivoUSD ?? 0) +
+    (totalEfectivoEUR ?? 0) +
+    (Number(totalDebitoCredito.replace(/[^0-9.-]/g, "")) || 0) +
+    (Number(totalTarjetasVirtuales.replace(/[^0-9.-]/g, "")) || 0) +
+    (Number(totalTransferencias.replace(/[^0-9.-]/g, "")) || 0);
+
+  const totalGeneral = formatCurrency(totalGeneralRaw);
 
   return (
     <Container className="mt-5">
@@ -334,5 +410,4 @@ const Totals = ({ data }) => {
     </Container>
   );
 };
-
 export default Totals;

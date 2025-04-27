@@ -31,14 +31,29 @@ const CashEuroData = ({ data }) => {
 
   // Función para calcular el subtotal
   const calculateSubtotal = (items) => {
+    console.log("Datos filtrados antes del cálculo:", items);
+    console.log(
+      "Montos extraídos:",
+      items.map((i) => i.ingreso?.montoTotal)
+    );
+    console.log("Cantidad de elementos:", items.length);
+
     return items
       .reduce((total, item) => {
-        const monto = parseFloat(
-          item.ingreso?.monto.replace(/\./g, "").replace(",", ".") || "0"
-        );
-        return total + monto;
+        let rawMonto = item.ingreso?.montoTotal || "0,00";
+        console.log("Procesando montoTotal antes de conversión:", rawMonto);
+
+        // ✅ Eliminamos primero los puntos de separación de miles, luego convertimos la coma decimal
+        let formattedMonto = rawMonto.replace(/,/g, "").replace(/\./g, ".");
+
+        console.log("Monto formateado antes de convertir:", formattedMonto); // 🔹 Aquí debe ser `1000.00`, no `1.00000`
+
+        const montoConvertido = parseFloat(formattedMonto) || 0;
+        console.log("Monto final procesado:", montoConvertido); // ✅ Ahora debe reflejar `1000.00` correctamente
+
+        return total + montoConvertido;
       }, 0)
-      .toLocaleString("es-ES", { style: "currency", currency: "EUR" }); // Formateo con moneda
+      .toLocaleString("es-MX", { style: "currency", currency: "MXN" });
   };
 
   return (
@@ -84,7 +99,8 @@ const CashEuroData = ({ data }) => {
                       <td>{item.habitacion?.tipo || "N/A"}</td>
                       <td>{new Date(item.checkIn).toLocaleDateString()}</td>
                       <td>{new Date(item.checkOut).toLocaleDateString()}</td>
-                      <td>{item.ingreso?.monto || "€0.00"}</td>
+                      <td>{item.ingreso?.montoTotal || "€0.00"}</td>{" "}
+                      {/* ✅ Usa montoTotal */}
                     </tr>
                   ))}
                   {/* Subtotal */}
@@ -110,11 +126,14 @@ const CashEuroData = ({ data }) => {
           <Card>
             <Table striped bordered hover>
               <thead>
-                <tr className="bg-success text-white">
+                <tr className="bg-primary text-white">
                   <th>No.</th>
                   <th>Fecha de Pago</th>
                   <th>Nombre</th>
-                  <th>Descripción</th>
+                  <th>Habitación</th>
+                  <th>Tipo de Habitación</th>
+                  <th>Check-In</th>
+                  <th>Check-Out</th>
                   <th>Importe</th>
                 </tr>
               </thead>
@@ -124,13 +143,17 @@ const CashEuroData = ({ data }) => {
                     <td>{index + 1}</td>
                     <td>{new Date(item.fechaPago).toLocaleDateString()}</td>
                     <td>{item.nombre}</td>
-                    <td>{item.concepto}</td>
-                    <td>{item.ingreso?.monto || "€0.00"}</td>
+                    <td>{item.habitacion?.numero || "N/A"}</td>
+                    <td>{item.habitacion?.tipo || "N/A"}</td>
+                    <td>{new Date(item.checkIn).toLocaleDateString()}</td>
+                    <td>{new Date(item.checkOut).toLocaleDateString()}</td>
+                    <td>{item.ingreso?.montoTotal || "€0.00"}</td>{" "}
+                    {/* ✅ Usa montoTotal */}
                   </tr>
                 ))}
                 {/* Subtotal */}
                 <tr className="bg-light">
-                  <td colSpan="4" className="text-end fw-bold">
+                  <td colSpan="7" className="text-end fw-bold">
                     Subtotal:
                   </td>
                   <td className="fw-bold">

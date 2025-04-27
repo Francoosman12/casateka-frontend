@@ -8,6 +8,7 @@ import {
   Modal,
   Form,
 } from "react-bootstrap";
+import EditMovementModal from "../components/EditMovementModal";
 import axios from "axios";
 
 const Movements = () => {
@@ -77,57 +78,52 @@ const Movements = () => {
   // Manejo del formulario para editar el movimiento
   const handleChange = (e) => {
     const { name, value } = e.target;
+    console.log("Cambio detectado en:", name, "Nuevo valor:", value); // ✅ Ver qué datos se actualizan
 
-    if (name === "ingreso.tipo" || name === "ingreso.subtipo") {
+    if (name.startsWith("ingreso.")) {
       setFormData((prevData) => ({
         ...prevData,
         ingreso: {
           ...prevData.ingreso,
-          [name.split(".")[1]]: value, // Actualizar tipo o subtipo
-          monto: "", // Reinicia el monto editable
-        },
-      }));
-    } else if (name === "ingreso.monto") {
-      // Actualizar monto
-      setFormData((prevData) => ({
-        ...prevData,
-        ingreso: {
-          ...prevData.ingreso,
-          monto: value,
+          [name.split(".")[1]]: value, // ✅ Actualizar correctamente el ingreso
         },
       }));
     } else {
-      // Otros campos simples
       setFormData((prevData) => ({
         ...prevData,
-        [name]: value,
+        [name]: value, // ✅ Actualizar otros campos
       }));
     }
   };
 
-  // Guardar los cambios realizados en el movimiento
   const handleSaveChanges = async () => {
+    console.log("Datos que se enviarán al backend:", formData);
+
     const confirmUpdate = window.confirm(
       "¿Estás seguro de que deseas actualizar este movimiento?"
     );
     if (!confirmUpdate) return;
 
     try {
-      await axios.put(
+      const response = await axios.put(
         `${import.meta.env.VITE_BACKEND_URL}/api/movements/${
           selectedMovement._id
         }`,
         formData
-      ); // Enviar datos actualizados
+      );
 
-      // Actualizar el estado local para reflejar cambios
-      setMovements(
-        movements.map((movement) =>
+      console.log("Respuesta del servidor:", response.data);
+
+      // ✅ FORZAR la actualización del estado con los datos nuevos
+      setMovements((prevMovements) =>
+        prevMovements.map((movement) =>
           movement._id === selectedMovement._id
-            ? { ...movement, ...formData }
+            ? { ...movement, ...response.data } // ✅ Fusionamos los datos actualizados del backend
             : movement
         )
       );
+
+      setSelectedMovement(response.data); // ✅ Reflejar los cambios en el modal inmediatamente
 
       handleCloseModal();
     } catch (error) {
@@ -181,11 +177,12 @@ const Movements = () => {
                     <td>{movement.concepto || "N/A"}</td>
                     <td>{movement.ota || "N/A"}</td>
                     <td>
-                      {movement.ingreso?.monto?.toLocaleString("es-MX", {
+                      {movement.ingreso?.montoTotal?.toLocaleString("es-MX", {
                         style: "currency",
                         currency: "MXN",
                       }) || "$0.00"}
                     </td>
+                    {/* ✅ Ahora accede a `montoTotal` */}
                     <td>
                       <Button
                         variant="warning"
@@ -211,198 +208,15 @@ const Movements = () => {
       </Row>
 
       {/* Modal para editar movimiento */}
-      <Modal show={showModal} onHide={handleCloseModal}>
-        <Modal.Header closeButton>
-          <Modal.Title>Editar Movimiento</Modal.Title>
-        </Modal.Header>
-        <Modal.Body>
-          {selectedMovement && (
-            <Form>
-              {/* Nombre del huésped */}
-              <Form.Group className="mb-3">
-                <Form.Label>Nombre</Form.Label>
-                <Form.Control
-                  type="text"
-                  name="nombre"
-                  value={formData.nombre || ""}
-                  onChange={handleChange}
-                  placeholder="Ingresa el nombre del huésped"
-                />
-              </Form.Group>
 
-              {/* Número de Habitación */}
-              <Form.Group className="mb-3">
-                <Form.Label>Habitación</Form.Label>
-                <Form.Select
-                  name="habitacion.numero"
-                  value={formData.habitacion?.numero || ""}
-                  onChange={handleChange}
-                >
-                  <option value="">Selecciona una habitación</option>
-                  {[...Array(11).keys()].map((num) => (
-                    <option key={num + 1} value={num + 1}>
-                      Habitación {num + 1}
-                    </option>
-                  ))}
-                </Form.Select>
-              </Form.Group>
-
-              {/* Tipo de Habitación */}
-              <Form.Group className="mb-3">
-                <Form.Label>Tipo de Habitación</Form.Label>
-                <Form.Control
-                  type="text"
-                  name="habitacion.tipo"
-                  value={formData.habitacion?.tipo || ""}
-                  onChange={handleChange}
-                  placeholder="Ingresa el tipo de habitación"
-                />
-              </Form.Group>
-
-              {/* Check-In */}
-              <Form.Group className="mb-3">
-                <Form.Label>Check-In</Form.Label>
-                <Form.Control
-                  type="date"
-                  name="checkIn"
-                  value={
-                    formData.checkIn
-                      ? new Date(formData.checkIn).toISOString().split("T")[0]
-                      : ""
-                  }
-                  onChange={handleChange}
-                />
-              </Form.Group>
-
-              {/* Check-Out */}
-              <Form.Group className="mb-3">
-                <Form.Label>Check-Out</Form.Label>
-                <Form.Control
-                  type="date"
-                  name="checkOut"
-                  value={
-                    formData.checkOut
-                      ? new Date(formData.checkOut).toISOString().split("T")[0]
-                      : ""
-                  }
-                  onChange={handleChange}
-                />
-              </Form.Group>
-
-              {/* Concepto */}
-              <Form.Group className="mb-3">
-                <Form.Label>Concepto</Form.Label>
-                <Form.Select
-                  name="concepto"
-                  value={formData.concepto || ""}
-                  onChange={handleChange}
-                >
-                  <option value="">Selecciona un concepto</option>
-                  <option value="Cobro de estancia">Cobro de estancia</option>
-                  <option value="Amenidades">Amenidades</option>
-                </Form.Select>
-              </Form.Group>
-
-              {/* OTA */}
-              <Form.Group className="mb-3">
-                <Form.Label>OTA</Form.Label>
-                <Form.Select
-                  name="ota"
-                  value={formData.ota || ""}
-                  onChange={handleChange}
-                >
-                  <option value="">Selecciona una OTA</option>
-                  <option value="Booking">Booking.com</option>
-                  <option value="Expedia">Expedia</option>
-                  <option value="Directa">Directa</option>
-                </Form.Select>
-              </Form.Group>
-
-              {/* Tipo de ingreso */}
-              <Form.Group className="mb-3">
-                <Form.Label>Tipo de Ingreso</Form.Label>
-                <Form.Select
-                  name="ingreso.tipo"
-                  value={formData.ingreso?.tipo || ""}
-                  onChange={handleChange}
-                >
-                  <option value="">Selecciona el tipo de ingreso</option>
-                  <option value="Efectivo">Efectivo</option>
-                  <option value="Tarjeta">Tarjeta</option>
-                </Form.Select>
-              </Form.Group>
-
-              {/* Subtipo de ingreso */}
-              <Form.Group className="mb-3">
-                <Form.Label>Subtipo de Ingreso</Form.Label>
-                <Form.Select
-                  name="ingreso.subtipo"
-                  value={formData.ingreso?.subtipo || ""}
-                  onChange={handleChange}
-                >
-                  <option value="">Selecciona el subtipo de ingreso</option>
-                  <option value="Pesos">Pesos</option>
-                  <option value="Dólares">Dólares</option>
-                  <option value="Euros">Euros</option>
-                  <option value="Débito/Crédito">Débito/Crédito</option>
-                  <option value="Virtual">Virtual</option>
-                  <option value="Transferencias">Transferencias</option>
-                </Form.Select>
-              </Form.Group>
-
-              {/* Monto */}
-              <Form.Group className="mb-3">
-                <Form.Label>Monto</Form.Label>
-                <Form.Control
-                  type="text"
-                  name="monto"
-                  value={formData.ingreso?.monto || "0,00"} // Valor inicial por defecto
-                  onChange={(e) => {
-                    let inputValue = e.target.value;
-
-                    // Remover cualquier carácter no numérico
-                    inputValue = inputValue.replace(/[^0-9]/g, "");
-
-                    // Asegurar al menos tres dígitos para manejar decimales correctamente
-                    while (inputValue.length < 3) {
-                      inputValue = "0" + inputValue; // Rellenar con ceros al inicio
-                    }
-
-                    // Separar la parte entera y los decimales
-                    const integerPart = inputValue.slice(0, -2); // Parte entera
-                    const decimalPart = inputValue.slice(-2); // Últimos 2 dígitos como decimales
-
-                    // Formatear la parte entera y eliminar ceros iniciales innecesarios
-                    const formattedIntegerPart = integerPart
-                      .replace(/^0+(?!$)/, "") // Remover ceros a la izquierda
-                      .replace(/\B(?=(\d{3})+(?!\d))/g, "."); // Agregar puntos como separadores de miles
-
-                    // Construir el valor formateado
-                    const formattedValue = `${
-                      formattedIntegerPart || "0"
-                    },${decimalPart}`;
-
-                    // Actualizar el estado con el valor formateado
-                    setFormData((prevData) => ({
-                      ...prevData,
-                      ingreso: { ...prevData.ingreso, monto: formattedValue },
-                    }));
-                  }}
-                  placeholder="Ingrese el monto (Ej: $1.500,00)"
-                />
-              </Form.Group>
-            </Form>
-          )}
-        </Modal.Body>
-        <Modal.Footer>
-          <Button variant="secondary" onClick={handleCloseModal}>
-            Cancelar
-          </Button>
-          <Button variant="primary" onClick={handleSaveChanges}>
-            Guardar Cambios
-          </Button>
-        </Modal.Footer>
-      </Modal>
+      <EditMovementModal
+        show={showModal}
+        handleClose={handleCloseModal}
+        formData={formData}
+        setFormData={setFormData} // ✅ PASAMOS SETFORMDATA AQUÍ
+        handleChange={handleChange}
+        handleSaveChanges={handleSaveChanges}
+      />
     </Container>
   );
 };

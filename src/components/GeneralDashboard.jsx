@@ -50,6 +50,12 @@ const GeneralDashboard = () => {
     const start = new Date(startDate);
     const end = new Date(endDate);
 
+    // ✅ Ajustamos `startDate` a las 00:00:00 para incluir toda la fecha inicial
+    start.setHours(0, 0, 0, 0);
+
+    // ✅ Ajustamos `endDate` a las 23:59:59 para incluir toda la fecha final
+    end.setHours(23, 59, 59, 999);
+
     const filtered = data.filter((item) => {
       const itemDate = new Date(item.fechaPago);
       return itemDate >= start && itemDate <= end;
@@ -72,15 +78,35 @@ const GeneralDashboard = () => {
     form.style.display = "none";
 
     const pdf = new jsPDF("p", "mm", "a4");
-    const marginTop = 10; // Márgenes más pequeños
-    const marginLeft = 10;
-    const pageWidth = pdf.internal.pageSize.getWidth() - marginLeft * 2; // Ancho disponible
-    const pageHeight = pdf.internal.pageSize.getHeight() - marginTop * 2; // Alto disponible
-    let currentHeight = marginTop;
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
 
-    // Lista de componentes a capturar
+    // 🔹 Capturar "Totales" y centrarlo en la página
+    const totalesElement = document.querySelector(".totales");
+    const totalesCanvas = await html2canvas(totalesElement, {
+      scale: 1.5,
+      useCORS: true,
+    });
+    const totalesImgData = totalesCanvas.toDataURL("image/jpeg", 0.7);
+    const totalesImgWidth = pageWidth * 1.0; // ✅ Ajustar el ancho de la imagen (80% del ancho de la página)
+    const totalesImgHeight =
+      (totalesCanvas.height * totalesImgWidth) / totalesCanvas.width;
+
+    const xCenter = (pageWidth - totalesImgWidth) / 2; // ✅ Calcular posición X centrada
+    const yCenter = (pageHeight - totalesImgHeight) / 2; // ✅ Calcular posición Y centrada
+
+    pdf.addImage(
+      totalesImgData,
+      "JPEG",
+      xCenter,
+      yCenter,
+      totalesImgWidth,
+      totalesImgHeight
+    );
+    pdf.addPage(); // 🔹 Agregar nueva página después de "Totales"
+
+    // 🔹 Capturar el resto de los componentes después de "Totales"
     const components = [
-      { ref: ".totales", title: "Totales" },
       { ref: ".cash-data", title: "Cash Data" },
       { ref: ".cash-dollar-data", title: "Cash Dollar Data" },
       { ref: ".cash-euro-data", title: "Cash Euro Data" },
@@ -89,32 +115,29 @@ const GeneralDashboard = () => {
       { ref: ".transfer-data", title: "Transfer Data" },
     ];
 
+    let currentHeight = 10; // ✅ Reiniciamos la posición inicial para los demás componentes
+
     for (const component of components) {
       const element = document.querySelector(component.ref);
 
-      const canvas = await html2canvas(element, {
-        scale: 1.5, // Escala más baja para reducir peso
-        useCORS: true,
-      });
+      const canvas = await html2canvas(element, { scale: 1.5, useCORS: true });
+      const imgData = canvas.toDataURL("image/jpeg", 0.7);
+      const imgHeight = (canvas.height * pageWidth) / canvas.width;
 
-      const imgData = canvas.toDataURL("image/jpeg", 0.5); // Reducir calidad de la imagen
-      const imgHeight = (canvas.height * pageWidth) / canvas.width; // Ajustar altura proporcional
-
-      // Verificar si el contenido cabe en la página actual
       if (currentHeight + imgHeight > pageHeight) {
-        pdf.addPage(); // Agregar nueva página si no hay espacio
-        currentHeight = marginTop;
+        pdf.addPage();
+        currentHeight = 10;
       }
 
       pdf.addImage(
         imgData,
         "JPEG",
-        marginLeft,
+        10,
         currentHeight,
-        pageWidth,
+        pageWidth - 20,
         imgHeight
       );
-      currentHeight += imgHeight + 10; // Incrementar la posición vertical para el siguiente componente
+      currentHeight += imgHeight + 10;
     }
 
     // Restaurar visibilidad de botones y formulario
@@ -136,7 +159,7 @@ const GeneralDashboard = () => {
   return (
     <Container fluid className="mt-5">
       {/* Filtros por Fecha */}
-      <Card className="mb-4 shadow-lg border-0 w-100">
+      <Card className="mb-4 shadow-sm border-0 w-100">
         <Card.Body>
           <Card.Title className="text-center display-4 font-weight-bold">
             Dashboard General
@@ -189,7 +212,7 @@ const GeneralDashboard = () => {
 
       {/* Totales Generales */}
       <Row className="my-4 w-100 totales">
-        <Card className="shadow-sm w-100">
+        <Card className="border-0 w-100">
           <Card.Body>
             <Totals data={filteredData} />
           </Card.Body>
@@ -198,42 +221,42 @@ const GeneralDashboard = () => {
 
       {/* Otros componentes */}
       <Row className="my-4 w-100 cash-data">
-        <Card className="shadow-sm w-100">
+        <Card className="border-0 w-100">
           <Card.Body>
             <CashData data={filteredData} />
           </Card.Body>
         </Card>
       </Row>
       <Row className="my-4 w-100 cash-dollar-data">
-        <Card className="shadow-sm w-100">
+        <Card className="border-0 w-100">
           <Card.Body>
             <CashDollarData data={filteredData} />
           </Card.Body>
         </Card>
       </Row>
       <Row className="my-4 w-100 cash-euro-data">
-        <Card className="shadow-sm w-100">
+        <Card className="border-0 w-100">
           <Card.Body>
             <CashEuroData data={filteredData} />
           </Card.Body>
         </Card>
       </Row>
       <Row className="my-4 w-100 card-data">
-        <Card className="shadow-sm w-100">
+        <Card className="border-0 w-100">
           <Card.Body>
             <CardData data={filteredData} />
           </Card.Body>
         </Card>
       </Row>
       <Row className="my-4 w-100 virtual-card-data">
-        <Card className="shadow-sm w-100">
+        <Card className="border-0 w-100">
           <Card.Body>
             <VirtualCardData data={filteredData} />
           </Card.Body>
         </Card>
       </Row>
       <Row className="my-4 w-100 transfer-data">
-        <Card className="shadow-sm w-100">
+        <Card className="border-0 w-100">
           <Card.Body>
             <TransferData data={filteredData} />
           </Card.Body>

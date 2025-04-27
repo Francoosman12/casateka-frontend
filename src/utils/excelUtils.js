@@ -8,111 +8,101 @@ export const exportToExcel = (filteredData) => {
   // Agregar espaciadores entre tablas
   const addSpacer = () => sheetData.push([]);
 
-
-  // Función para agregar cada tabla con más detalles y subtotales
+  // Función para agregar cada tabla con detalles y subtotales
   const addTable = (title, data, columns) => {
-    sheetData.push([title]); // Título de la tabla
-    sheetData.push(columns); // Encabezados
-    let subtotal = 0; // Inicializar subtotal como valor numérico
+    sheetData.push([title]); // 🔹 Título de la tabla
+    sheetData.push(columns); // 🔹 Encabezados
+    let subtotal = 0; // 🔹 Inicializar subtotal
   
     data.forEach((item) => {
-      const row = columns.map((col) => {
+      // 🔹 Primera fila con detalles generales + primera autorización
+      const firstRow = columns.map((col) => {
         switch (col) {
-          case "Fecha de Pago": {
-            return item.fechaPago ? new Date(item.fechaPago).toLocaleDateString() : "";
-          }
-          case "Nombre": {
-            return item.nombre || "N/A";
-          }
-          case "Habitación": {
-            return item.habitacion?.numero || "N/A";
-          }
-          case "Tipo de Habitación": {
-            return item.habitacion?.tipo || "N/A";
-          }
-          case "Check-In": {
-            return item.checkIn ? new Date(item.checkIn).toLocaleDateString() : "";
-          }
-          case "Check-Out": {
-            return item.checkOut ? new Date(item.checkOut).toLocaleDateString() : "";
-          }
-          case "Autorización": {
-            return item.autorizacion || "N/A";
-          }
-          case "OTA": {
-            return item.ota || "Sin OTA";
-          }
-          case "Importe": {
-            const monto = item.ingreso?.monto || "0,00"; // Tomar el monto tal cual está
-            subtotal += parseFloat(monto.replace(/\./g, "").replace(",", ".") || "0"); // Convertir el monto a numérico para sumar
-            return monto; // Mostrar el monto original
-          }
-          case "Concepto": {
-            return item.concepto || "N/A";
-          }
-          default: {
-            return "";
-          }
+          case "Fecha de Pago": return item.fechaPago ? new Date(item.fechaPago).toLocaleDateString() : "";
+          case "Nombre": return item.nombre || "N/A";
+          case "Habitación": return item.habitacion?.numero || "N/A";
+          case "Tipo de Habitación": return item.habitacion?.tipo || "N/A";
+          case "Check-In": return item.checkIn ? new Date(item.checkIn).toLocaleDateString() : "";
+          case "Check-Out": return item.checkOut ? new Date(item.checkOut).toLocaleDateString() : "";
+          case "Autorización": return item.ingreso?.autorizaciones?.[0]?.codigo || "N/A"; // ✅ Primera autorización
+          case "OTA": return item.ota || "Sin OTA";
+          case "Importe":
+            const monto = item.ingreso?.autorizaciones?.[0]?.monto 
+              ? parseFloat(item.ingreso?.autorizaciones?.[0]?.monto.replace(/\./g, "").replace(",", "."))
+              : 0; // ✅ Si el monto es `undefined`, usa 0
+            subtotal += monto;
+            return item.ingreso?.autorizaciones?.[0]?.monto || "0,00"; // ✅ Mostrar solo el monto de la autorización
+          case "Concepto": return item.concepto || "N/A";
+          default: return "";
         }
       });
-      sheetData.push(row); // Agregar fila a la tabla
+      sheetData.push(firstRow); // 🔹 Agregar primera fila
+  
+      // 🔹 Filas adicionales para más autorizaciones
+      item.ingreso?.autorizaciones?.slice(1).forEach((autorizacion) => {
+        const extraRow = columns.map((col) => {
+          switch (col) {
+            case "Autorización": return autorizacion.codigo; // ✅ Autorización adicional
+            case "Importe":
+              const monto = autorizacion.monto 
+                ? parseFloat(autorizacion.monto.replace(/\./g, "").replace(",", "."))
+                : 0;
+              subtotal += monto;
+              return autorizacion.monto || "0,00"; // ✅ Mostrar solo el monto de la autorización
+            default: return "";
+          }
+        });
+        sheetData.push(extraRow); // ✅ Agregar fila extra
+      });
     });
   
-    // Mostrar el subtotal en el mismo formato que los importes
+    // 🔹 Mostrar subtotal
     const subtotalRow = columns.map((col) =>
       col === "Importe" ? subtotal.toFixed(2).replace(/\./g, ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".") : ""
     );
-    subtotalRow[0] = "Subtotal:"; // Etiqueta para subtotal
+    subtotalRow[0] = "Subtotal:";
     sheetData.push(subtotalRow);
-    addSpacer(); // Separar tablas
+    addSpacer(); // 🔹 Separar tablas
   };
 
-  //ADD TOTALS
-  
+  // Agregar totales generales
   const addTotals = () => {
     sheetData.push(["Concepto", "Total"]); // Encabezados de la tabla
-  
-    const totalEfectivo = filteredData
-      .filter((item) => item.ingreso.tipo === "Efectivo")
-      .reduce((total, item) => total + parseFloat(item.ingreso?.monto.replace(/\./g, "").replace(",", ".") || "0"), 0);
-  
-    const totalTarjeta = filteredData
-      .filter((item) => item.ingreso.tipo === "Tarjeta")
-      .reduce((total, item) => total + parseFloat(item.ingreso?.monto.replace(/\./g, "").replace(",", ".") || "0"), 0);
-  
-    const totalEstancia = filteredData
-      .filter((item) => item.concepto === "Cobro de estancia")
-      .reduce((total, item) => total + parseFloat(item.ingreso?.monto.replace(/\./g, "").replace(",", ".") || "0"), 0);
-  
-    const totalAmenidades = filteredData
-      .filter((item) => item.concepto === "Amenidades")
-      .reduce((total, item) => total + parseFloat(item.ingreso?.monto.replace(/\./g, "").replace(",", ".") || "0"), 0);
-  
-    const totalBooking = filteredData
-      .filter((item) => item.ota === "Booking")
-      .reduce((total, item) => total + parseFloat(item.ingreso?.monto.replace(/\./g, "").replace(",", ".") || "0"), 0);
-  
-    const totalExpedia = filteredData
-      .filter((item) => item.ota === "Expedia")
-      .reduce((total, item) => total + parseFloat(item.ingreso?.monto.replace(/\./g, "").replace(",", ".") || "0"), 0);
-  
-    const totalDirecta = filteredData
-      .filter((item) => item.ota === "Directa")
-      .reduce((total, item) => total + parseFloat(item.ingreso?.monto.replace(/\./g, "").replace(",", ".") || "0"), 0);
-  
+
+    const sumByType = (condition) =>
+      filteredData
+        .filter(condition)
+        .reduce((total, item) => {
+          const monto = item.ingreso?.montoTotal
+            ? parseFloat(item.ingreso?.montoTotal.replace(/\./g, "").replace(",", "."))
+            : 0; // ✅ Si `montoTotal` es `undefined`, usa 0
+          return total + monto;
+        }, 0);
+
+    const totalEfectivo = sumByType((item) => item.ingreso.tipo === "Efectivo");
+    const totalTarjeta = sumByType((item) => item.ingreso.tipo === "Tarjeta");
+    const totalEstancia = sumByType((item) => item.concepto === "Cobro de estancia");
+    const totalAmenidades = sumByType((item) => item.concepto === "Amenidades");
+    const totalBooking = sumByType((item) => item.ota === "Booking");
+    const totalExpedia = sumByType((item) => item.ota === "Expedia");
+    const totalDirecta = sumByType((item) => item.ota === "Directa");
+
     const totalGeneral = totalEstancia + totalAmenidades;
-  
-    // Agregar filas con cada concepto y su total, en el formato deseado
-    sheetData.push(["Efectivo", totalEfectivo.toFixed(2).replace(/\./g, ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".")]);
-    sheetData.push(["Tarjeta", totalTarjeta.toFixed(2).replace(/\./g, ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".")]);
-    sheetData.push(["Cobro de Estancia", totalEstancia.toFixed(2).replace(/\./g, ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".")]);
-    sheetData.push(["Amenidades", totalAmenidades.toFixed(2).replace(/\./g, ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".")]);
-    sheetData.push(["Booking", totalBooking.toFixed(2).replace(/\./g, ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".")]);
-    sheetData.push(["Expedia", totalExpedia.toFixed(2).replace(/\./g, ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".")]);
-    sheetData.push(["Directa", totalDirecta.toFixed(2).replace(/\./g, ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".")]);
-    sheetData.push(["Total General", totalGeneral.toFixed(2).replace(/\./g, ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".")]);
-  
-    addSpacer(); // Agregar espaciador después de los totales
+
+    // 🔹 Agregar cada subtotal con formato correcto
+    const formatTotal = (value) =>
+      value.toFixed(2).replace(/\./g, ",").replace(/\B(?=(\d{3})+(?!\d))/g, ".");
+
+    sheetData.push(["Efectivo", formatTotal(totalEfectivo)]);
+    sheetData.push(["Tarjeta", formatTotal(totalTarjeta)]);
+    sheetData.push(["Cobro de Estancia", formatTotal(totalEstancia)]);
+    sheetData.push(["Amenidades", formatTotal(totalAmenidades)]);
+    sheetData.push(["Booking", formatTotal(totalBooking)]);
+    sheetData.push(["Expedia", formatTotal(totalExpedia)]);
+    sheetData.push(["Directa", formatTotal(totalDirecta)]);
+    sheetData.push(["Total General", formatTotal(totalGeneral)]);
+
+    addSpacer(); // 🔹 Separar tablas
   };
 
   // Agregar datos de cada tabla con subtotales
