@@ -9,14 +9,14 @@ const MovementForm = () => {
     ingreso: {
       tipo: "",
       subtipo: "",
-      montoTotal: "0,00", // ✅ Agregado aquí
-      autorizaciones: [{ codigo: "", monto: "" }],
+      montoTotal: "", // ✅ Ahora vacío
+      autorizaciones: [], // ✅ Se inicia como un array vacío
     },
-    fechaPago: null,
+    fechaPago: "",
     nombre: "",
     habitacion: { numero: "", tipo: "" },
-    checkIn: null,
-    checkOut: null,
+    checkIn: "",
+    checkOut: "",
     ota: "",
     concepto: "",
   });
@@ -101,8 +101,6 @@ const MovementForm = () => {
       maximumFractionDigits: 2,
     }).format(montoTotal);
 
-    console.log("Monto Total que se enviará:", formattedMontoTotal);
-
     try {
       const response = await axios.post(`${backendUrl}/api/movements`, {
         ...formData,
@@ -127,12 +125,12 @@ const MovementForm = () => {
 
   const resetForm = () => {
     setFormData({
-      ingreso: { tipo: "", subtipo: "", montoTotal: "", autorizaciones: [] }, // Reseteo completo de ingreso
-      fechaPago: null,
+      ingreso: { tipo: "", subtipo: "", montoTotal: "", autorizaciones: [] },
+      fechaPago: "",
       nombre: "",
       habitacion: { numero: "", tipo: "" },
-      checkIn: null,
-      checkOut: null,
+      checkIn: "",
+      checkOut: "",
       ota: "",
       concepto: "",
     });

@@ -75,23 +75,48 @@ const Movements = () => {
     setSelectedMovement(null);
   };
 
+  // Función para determinar el tipo de habitación según el número
+  const determinarTipoHabitacion = (numeroHabitacion) => {
+    if ([8, 10].includes(Number(numeroHabitacion))) {
+      return "Junior Suite Tapanko";
+    } else if (Number(numeroHabitacion) === 11) {
+      return "Master Suite";
+    } else if ([1, 2, 3, 4, 5, 6, 7, 9].includes(Number(numeroHabitacion))) {
+      return "Suite Deluxe Standard";
+    } else {
+      return ""; // Por si no es un número válido
+    }
+  };
+
   // Manejo del formulario para editar el movimiento
   const handleChange = (e) => {
     const { name, value } = e.target;
-    console.log("Cambio detectado en:", name, "Nuevo valor:", value); // ✅ Ver qué datos se actualizan
+    console.log("Cambio detectado en:", name, "Nuevo valor:", value); // ✅ Depuración
 
-    if (name.startsWith("ingreso.")) {
+    const keys = name.split(".");
+    if (name === "habitacion.numero") {
+      // ✅ Determinar el tipo de habitación automáticamente
+      const tipoHabitacion = determinarTipoHabitacion(value);
       setFormData((prevData) => ({
         ...prevData,
-        ingreso: {
-          ...prevData.ingreso,
-          [name.split(".")[1]]: value, // ✅ Actualizar correctamente el ingreso
+        habitacion: {
+          ...prevData.habitacion,
+          numero: value,
+          tipo: tipoHabitacion, // ✅ Se actualiza dinámicamente
+        },
+      }));
+    } else if (keys.length > 1) {
+      setFormData((prevData) => ({
+        ...prevData,
+        [keys[0]]: {
+          ...prevData[keys[0]],
+          [keys[1]]: value, // ✅ Actualiza cualquier propiedad dentro de objetos anidados
         },
       }));
     } else {
       setFormData((prevData) => ({
         ...prevData,
-        [name]: value, // ✅ Actualizar otros campos
+        [name]: value, // ✅ Actualiza cualquier otro campo directo
       }));
     }
   };
@@ -131,6 +156,14 @@ const Movements = () => {
       alert("Hubo un problema al actualizar el movimiento.");
     }
   };
+
+  const handleDateChange = (date) => {
+    setFormData((prevState) => ({
+      ...prevState,
+      fechaPago: date, // ✅ Se asegura de actualizar correctamente `fechaPago`
+    }));
+  };
+
   return (
     <Container className="mt-5">
       <Row className="mb-4">
@@ -213,9 +246,10 @@ const Movements = () => {
         show={showModal}
         handleClose={handleCloseModal}
         formData={formData}
-        setFormData={setFormData} // ✅ PASAMOS SETFORMDATA AQUÍ
         handleChange={handleChange}
+        handleDateChange={handleDateChange} // ✅ Ahora el modal recibirá correctamente la función
         handleSaveChanges={handleSaveChanges}
+        setFormData={setFormData}
       />
     </Container>
   );
