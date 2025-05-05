@@ -24,6 +24,8 @@ const NavbarComponent = () => {
             <Nav.Link href="/">Crear Movimiento</Nav.Link>
             <Nav.Link href="/general-dashboard">Dashboard General</Nav.Link>
             <Nav.Link href="/movements">Movimientos</Nav.Link>
+            <Nav.Link href="/reports">Reportes</Nav.Link>{" "}
+            {/* ✅ Nueva opción en el menú */}
           </Nav>
         </Navbar.Collapse>
       </Container>

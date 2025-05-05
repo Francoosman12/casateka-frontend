@@ -82,7 +82,7 @@ const VirtualCardData = ({ data }) => {
               <Card.Header className="bg-light text-dark">
                 <h4>{ota}</h4>
               </Card.Header>
-              <Table striped bordered hover>
+              <Table striped bordered hover className="virtual-card-data-table">
                 <thead>
                   <tr className="bg-primary text-white">
                     <th>No.</th>

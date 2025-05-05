@@ -10,6 +10,7 @@ import TransferData from "../src/components/TransferData";
 import Totals from "../src/components/Totals";
 import GeneralDashboard from "../src/components/GeneralDashboard";
 import Dashboard from "../src/pages/Dashboard";
+import Reports from "../src/pages/ReportsPage";
 import Movements from "../src/pages/Movements"; // Importar la nueva página Movements
 import NavbarComponent from "../src/components/Navbar"; // Importar el navbar
 
@@ -28,6 +29,7 @@ function App() {
         <Route path="/transfer-data" element={<TransferData />} />
         <Route path="/totals" element={<Totals />} />
         <Route path="/general-dashboard" element={<GeneralDashboard />} />
+        <Route path="/reports" element={<Reports />} />
         <Route path="/movement-form" element={<MovementForm />} />
         <Route path="/movements" element={<Movements />} />{" "}
         {/* Nueva ruta para Movements */}

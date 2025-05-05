@@ -218,7 +218,7 @@ const Totals = ({ data = [] }) => {
       {/* Tablas de Totales */}
       <Row className="mb-4">
         <Col xs={12} md={6} className="mb-4">
-          <Table size="sm" striped bordered hover>
+          <Table size="sm" striped bordered hover className="totals-data-table">
             <thead>
               <tr className="bg-dark text-white">
                 <th>Efectivo</th>
@@ -258,7 +258,7 @@ const Totals = ({ data = [] }) => {
         </Col>
 
         <Col xs={12} md={6} className="mb-4">
-          <Table size="sm" striped bordered hover>
+          <Table size="sm" striped bordered hover className="totals-data-table">
             <thead>
               <tr className="bg-dark text-white">
                 <th>Tarjetas</th>
@@ -300,7 +300,7 @@ const Totals = ({ data = [] }) => {
 
       <Row className="mb-4">
         <Col xs={12} md={6} className="mx-auto">
-          <Table size="sm" striped bordered hover>
+          <Table size="sm" striped bordered hover className="totals-data-table">
             <thead>
               <tr className="bg-success text-white">
                 <th>Concepto</th>
@@ -333,7 +333,7 @@ const Totals = ({ data = [] }) => {
 
       <Row className="mb-4">
         <Col xs={12} md={6}>
-          <Table size="sm" striped bordered hover>
+          <Table size="sm" striped bordered hover className="totals-data-table">
             <thead>
               <tr className="bg-dark text-white">
                 <th>OTAs</th>
@@ -373,7 +373,7 @@ const Totals = ({ data = [] }) => {
         </Col>
 
         <Col xs={12} md={6}>
-          <Table size="sm" striped bordered hover>
+          <Table size="sm" striped bordered hover className="totals-data-table">
             <thead>
               <tr className="bg-primary text-white">
                 <th>Totales Generales</th>
