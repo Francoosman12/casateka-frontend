@@ -1,15 +1,31 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import logo from "../assets/logo-casateka.png";
 
-export const generatePDFReport = async (data) => {
+export const generatePDFReport = async (data, startDate, endDate) => {
+    if (!startDate || !endDate) {
+        alert("Error: Las fechas de inicio y fin no están definidas.");
+        return;
+    }
+
     const pdf = new jsPDF();
     const currentDate = new Date();
     const formattedDate = currentDate.toISOString().slice(0, 10);
     const formattedTime = currentDate.toTimeString().slice(0, 5).replace(":", "-");
     const fileName = `Reporte_Movimientos_${formattedDate}_${formattedTime}.pdf`;
 
+  
     let pageNumber = 1;
-    let startY = 30;
+  
+
+    const formattedStartDate = new Date(startDate);
+formattedStartDate.setDate(formattedStartDate.getDate() + 1); // ✅ Ajuste para corregir el día perdido
+
+const formattedEndDate = new Date(endDate);
+formattedEndDate.setDate(formattedEndDate.getDate() + 1); // ✅ Ajuste para corregir el día perdido
+
+
+ 
 
     // 🔹 Calcular totales antes de construir el PDF
     const totalEfectivoMXN = data.reduce((total, item) =>
@@ -55,17 +71,24 @@ const totalNochesVendidas = data.reduce((total, item) =>
 // 🔹 Calcular tarifa promedio por noche
 const tarifaPromedioPorNoche = totalNochesVendidas > 0 ? totalEstancia / totalNochesVendidas : 0;
 
-    const totalGeneral = totalEfectivoMXN + totalEfectivoUSD + totalEfectivoEUR;
+    const totalGeneral = totalEfectivoMXN + totalEfectivoUSD + totalEfectivoEUR + totalTarjetaCreditoDebito + totalTarjetaVirtual + totalTransferencias;
 
     // 🔹 Establecer el encabezado del reporte
-    pdf.setFontSize(16);
-    pdf.setTextColor(40, 40, 40);
-    pdf.text("Reporte de Movimientos", 10, 10);
-    pdf.setFontSize(10);
-    pdf.text(`Fecha de generación: ${formattedDate} ${formattedTime.replace("-", ":")}`, 10, 15);
-    pdf.setDrawColor(0, 0, 0);
-    pdf.setLineWidth(0.5);
-    pdf.line(10, 18, 200, 18);
+    // 🔹 Agregar encabezado con título, descripción y periodo
+pdf.setFontSize(10);
+pdf.setTextColor(40, 40, 40);
+pdf.text("Operadora Kapen S.A de C.V.", 10, 10);
+pdf.setFontSize(14);
+pdf.text("Reporte General de Ingresos de Hotel Casa Teka", 10, 20);
+pdf.setFontSize(12);
+pdf.text(`Periodo del ${formattedStartDate.toLocaleDateString("es-MX")} al ${formattedEndDate.toLocaleDateString("es-MX")}.`, 10, 30);
+
+// 🔹 Línea de separación debajo del encabezado
+pdf.setDrawColor(0, 0, 0);
+pdf.setLineWidth(0.5);
+pdf.line(10, 35, 200, 35);
+
+pdf.addImage(logo, "PNG", 150, 10, 30, 20); // ✅ Importación directa // Posición y tamaño del logo
 
     if (!data || data.length === 0) {
         pdf.text("No hay datos disponibles para el reporte.", 10, 25);
@@ -73,45 +96,95 @@ const tarifaPromedioPorNoche = totalNochesVendidas > 0 ? totalEstancia / totalNo
         return;
     }
 
+
     // 🔹 Agregar la tabla de totales antes del desglose detallado
+    let startY = 50; // ✅ Definir la posición inicial para las tablas
+
+    // 🔹 Mini tabla de Efectivo
     autoTable(pdf, {
         head: [["Descripción", "Total"]],
         body: [
-            // 🔹 Totales de Efectivo
             ["Efectivo MXN", formatNumber(totalEfectivoMXN)],
             ["Efectivo USD", formatNumber(totalEfectivoUSD)],
-            ["Efectivo EUR", formatNumber(totalEfectivoEUR)],
-    
-            // 🔹 Totales de Tarjetas y Transferencias
-            ["Tarjeta Débito/Crédito", formatNumber(totalTarjetaCreditoDebito)],
-            ["Tarjetas Virtuales", formatNumber(totalTarjetaVirtual)],
-            ["Transferencias", formatNumber(totalTransferencias)],
-    
-            // 🔹 Totales por Concepto
-            ["Cobro de Estancia", formatNumber(totalEstancia)],
-            ["Amenidades", formatNumber(totalAmenidades)],
-    
-            // 🔹 Totales por OTAs
-            ["Booking", formatNumber(totalBooking)],
-            ["Expedia", formatNumber(totalExpedia)],
-            ["Directa", formatNumber(totalDirecta)],
-    
-            // 🔹 Totales Generales
-            ["Total General", formatNumber(totalGeneral)],
-            ["Tarifa Promedio por Noche", formatNumber(tarifaPromedioPorNoche)],
-            ["Total Noches Vendidas", totalNochesVendidas],
+            ["Efectivo EUR", formatNumber(totalEfectivoEUR)]
         ],
-        startY: 30,
+        startY: startY,
         theme: "grid",
         styles: { fontSize: 10, cellPadding: 3 },
-        columnStyles: {
-            1: { halign: "right", fontStyle: "bold" }
-        }
+        columnStyles: { 1: { halign: "right", fontStyle: "bold" } },
+        headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] } // 🔹 Fondo negro y texto blanco
+    });
+    
+    startY = pdf.lastAutoTable.finalY + 10; // ✅ Espaciado entre tablas
+    
+    // 🔹 Mini tabla de Tarjetas
+    autoTable(pdf, {
+        head: [["Descripción", "Total"]],
+        body: [
+            ["Tarjeta Débito/Crédito", formatNumber(totalTarjetaCreditoDebito)],
+            ["Tarjetas Virtuales", formatNumber(totalTarjetaVirtual)],
+            ["Transferencias", formatNumber(totalTransferencias)]
+        ],
+        startY: startY,
+        theme: "grid",
+        styles: { fontSize: 10, cellPadding: 3 },
+        columnStyles: { 1: { halign: "right", fontStyle: "bold" } },
+        headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] } 
+    });
+    
+    startY = pdf.lastAutoTable.finalY + 10;
+    
+    // 🔹 Mini tabla de Conceptos
+    autoTable(pdf, {
+        head: [["Descripción", "Total"]],
+        body: [
+            ["Cobro de Estancia", formatNumber(totalEstancia)],
+            ["Amenidades", formatNumber(totalAmenidades)]
+        ],
+        startY: startY,
+        theme: "grid",
+        styles: { fontSize: 10, cellPadding: 3 },
+        columnStyles: { 1: { halign: "right", fontStyle: "bold" } },
+        headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] } 
+    });
+    
+    startY = pdf.lastAutoTable.finalY + 10;
+    
+    // 🔹 Mini tabla de OTAs
+    autoTable(pdf, {
+        head: [["Descripción", "Total"]],
+        body: [
+            ["Booking", formatNumber(totalBooking)],
+            ["Expedia", formatNumber(totalExpedia)],
+            ["Directa", formatNumber(totalDirecta)]
+        ],
+        startY: startY,
+        theme: "grid",
+        styles: { fontSize: 10, cellPadding: 3 },
+        columnStyles: { 1: { halign: "right", fontStyle: "bold" } },
+        headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] } 
+    });
+    
+    startY = pdf.lastAutoTable.finalY + 10;
+    
+    // 🔹 Mini tabla de Totales Generales
+    autoTable(pdf, {
+        head: [["Descripción", "Total"]],
+        body: [
+            ["Total General", formatNumber(totalGeneral)],
+            ["Tarifa Promedio por Noche", formatNumber(tarifaPromedioPorNoche)],
+            ["Total Noches Vendidas", totalNochesVendidas]
+        ],
+        startY: startY,
+        theme: "grid",
+        styles: { fontSize: 10, cellPadding: 3 },
+        columnStyles: { 1: { halign: "right", fontStyle: "bold" } },
+        headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] } 
     });
 
     // ✅ Agregar número de página
     pdf.setFontSize(10);
-    pdf.text(`Página ${pageNumber}`, 185, 290);
+    pdf.text(`${pageNumber}`, 185, 290);
     pdf.addPage();
     pageNumber++;
     startY = 30;  
@@ -131,42 +204,70 @@ const tarifaPromedioPorNoche = totalNochesVendidas > 0 ? totalEstancia / totalNo
         return acc;
     }, {});
 
+    startY=15;
+    
     Object.keys(groupedBySubtipo).forEach((subtipo) => {
-        startY += 6;
+        // ✅ Imprimir número de página ANTES de verificar si se necesita una nueva página
+        pageNumber = pdf.getNumberOfPages();
+        pdf.setFontSize(10);
+        pdf.text(`${pageNumber}`, 185, 290);
+    
+        // ✅ Si `startY` supera el límite, agregar nueva página y actualizar número
+        if (startY > 250) {
+            pdf.addPage();
+            pageNumber++; // ✅ Incrementar página correctamente
+            startY = 10; // ✅ Reiniciar margen en nueva página
+    
+            // ✅ Asegurar que la numeración aparece en TODAS las páginas después de la nueva página
+            pdf.setFontSize(10);
+            pdf.text(`${pageNumber}`, 185, 290);
+        }
+    
         pdf.setFontSize(12);
         pdf.text(subtipo.toUpperCase(), 10, startY);
         pdf.setLineWidth(0.2);
         pdf.line(10, startY + 2, 200, startY + 2);
         startY += 6;
-
+    
         Object.keys(groupedBySubtipo[subtipo]).forEach((concepto) => {
             startY += 5;
             pdf.setFontSize(11);
-            pdf.setTextColor(50, 50, 50);
             pdf.text(`${concepto}`, 12, startY);
-            pdf.setTextColor(0, 0, 0);
             startY += 5;
-
+    
             Object.keys(groupedBySubtipo[subtipo][concepto]).forEach((ota) => {
                 startY += 4;
                 pdf.setFontSize(10);
-                pdf.setTextColor(100, 100, 100);
                 pdf.text(`${ota}`, 12, startY);
-                pdf.setTextColor(0, 0, 0);
                 startY += 3;
-
+    
                 const otaData = groupedBySubtipo[subtipo][concepto][ota];
                 const subtotal = otaData.reduce((sum, item) => sum + (parseFloat(item.ingreso?.montoTotal) || 0), 0);
+    
+                const { formattedRows, rowStyles } = formatTableData(otaData);
 
                 autoTable(pdf, {
                     head: [["No.", "Fecha Pago", "Nombre", "Habitación", "Tipo Hab.", "Check-In", "Check-Out", "Autorización", "Monto Aut.", "Importe Total"]],
-                    body: [...formatTableData(otaData), ["", "", "", "", "", "", "", "Subtotal:", "", formatNumber(subtotal)]],
+                    body: formattedRows,
                     startY: startY,
                     theme: "grid",
                     styles: { fontSize: 8, cellPadding: 2 },
+                    headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] },
+                    bodyStyles: rowStyles // ✅ Aplicar colores intercalados en cada fila
                 });
-
+    
                 startY = pdf.lastAutoTable.finalY + 6;
+    
+                // ✅ Si `startY` supera el límite, asegurar nueva página con numeración correcta
+                if (startY > 240) {
+                    pdf.addPage();
+                    pageNumber++; // ✅ Incrementar página en cada nueva hoja
+                    startY = 10; // ✅ Reiniciar margen en nueva página
+    
+                    // ✅ Agregar número de página inmediatamente después de la nueva página
+                    pdf.setFontSize(10);
+                    pdf.text(` ${pageNumber}`, 185, 290);
+                }
             });
         });
     });
@@ -175,41 +276,48 @@ const tarifaPromedioPorNoche = totalNochesVendidas > 0 ? totalEstancia / totalNo
 };
 
 const formatTableData = (items) => {
-  let formattedRows = [];
+    let formattedRows = [];
+    let rowStyles = [];
 
-  items.forEach((item, index) => {
-    if (item.ingreso?.autorizaciones && item.ingreso.autorizaciones.length > 0) {
-      item.ingreso.autorizaciones.forEach((auth, authIndex) => {
-        formattedRows.push([
-          authIndex === 0 ? index + 1 : "", // ✅ Solo en la primera fila
-          authIndex === 0 ? new Date(item.fechaPago).toLocaleDateString() : "",
-          authIndex === 0 ? item.nombre : "",
-          authIndex === 0 ? item.habitacion?.numero || "N/A" : "",
-          authIndex === 0 ? item.habitacion?.tipo || "N/A" : "",
-          authIndex === 0 ? new Date(item.checkIn).toLocaleDateString() : "",
-          authIndex === 0 ? new Date(item.checkOut).toLocaleDateString() : "",
-          auth.codigo || "N/A", // ✅ Cada autorización en fila separada
-          auth.monto, // ✅ Se mantiene el formato correcto del monto por autorización
-          authIndex === 0 ? formatNumber(item.ingreso?.montoTotal) : "", // ✅ Importe total solo en la primera fila
-        ]);
-      });
-    } else {
-      formattedRows.push([
-        index + 1,
-        new Date(item.fechaPago).toLocaleDateString(),
-        item.nombre,
-        item.habitacion?.numero || "N/A",
-        item.habitacion?.tipo || "N/A",
-        new Date(item.checkIn).toLocaleDateString(),
-        new Date(item.checkOut).toLocaleDateString(),
-        "N/A",
-        "$0.00", // ✅ Mantener sin cambios
-        formatNumber(item.ingreso?.montoTotal), // ✅ Formato correcto del importe total
-      ]);
-    }
-  });
+    items.forEach((item, index) => {
+        if (item.ingreso?.autorizaciones && item.ingreso.autorizaciones.length > 0) {
+            item.ingreso.autorizaciones.forEach((auth, authIndex) => {
+                formattedRows.push([
+                    authIndex === 0 ? index + 1 : "", // ✅ Solo en la primera fila
+                    authIndex === 0 ? new Date(item.fechaPago).toLocaleDateString() : "",
+                    authIndex === 0 ? item.nombre : "",
+                    authIndex === 0 ? item.habitacion?.numero || "N/A" : "",
+                    authIndex === 0 ? item.habitacion?.tipo || "N/A" : "",
+                    authIndex === 0 ? new Date(item.checkIn).toLocaleDateString() : "",
+                    authIndex === 0 ? new Date(item.checkOut).toLocaleDateString() : "",
+                    auth.codigo || "N/A", // ✅ Cada autorización en fila separada
+                    auth.monto, // ✅ Se mantiene el formato correcto del monto por autorización
+                    authIndex === 0 ? formatNumber(item.ingreso?.montoTotal) : "" // ✅ Importe total solo en la primera fila
+                ]);
 
-  return formattedRows;
+                // ✅ Definir color de fondo intercalado (gris claro o blanco)
+                rowStyles.push({ fillColor: index % 2 === 0 ? [240, 240, 240] : [255, 255, 255] });
+            });
+        } else {
+            formattedRows.push([
+                index + 1,
+                new Date(item.fechaPago).toLocaleDateString(),
+                item.nombre,
+                item.habitacion?.numero || "N/A",
+                item.habitacion?.tipo || "N/A",
+                new Date(item.checkIn).toLocaleDateString(),
+                new Date(item.checkOut).toLocaleDateString(),
+                "N/A",
+                "$0.00", // ✅ Mantener sin cambios
+                formatNumber(item.ingreso?.montoTotal) // ✅ Formato correcto del importe total
+            ]);
+
+            // ✅ Definir color de fondo intercalado (gris claro o blanco)
+            rowStyles.push({ fillColor: index % 2 === 0 ? [240, 240, 240] : [255, 255, 255] });
+        }
+    });
+
+    return { formattedRows, rowStyles };
 };
 
 const formatNumber = (number) => {

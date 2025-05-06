@@ -34,10 +34,16 @@ const ReportsPage = () => {
       return;
     }
 
-    // ✅ Filtrar datos según las fechas seleccionadas
+    // ✅ Convertir fechas a formato `YYYY-MM-DD` para comparación precisa
+    const adjustedStartDate = new Date(startDate).toISOString().split("T")[0];
+    const adjustedEndDate = new Date(endDate);
+    adjustedEndDate.setHours(23, 59, 59, 999); // 🔹 Asegurar que incluya el día completo
+    const finalEndDate = adjustedEndDate.toISOString().split("T")[0];
+
+    // 🔹 Filtrar datos asegurando que la fecha final se incluya correctamente
     const filtered = reportData.filter((mov) => {
-      const itemDate = new Date(mov.fechaPago);
-      return itemDate >= new Date(startDate) && itemDate <= new Date(endDate);
+      const itemDate = new Date(mov.fechaPago).toISOString().split("T")[0]; // 🔹 Comparar sin horas
+      return itemDate >= adjustedStartDate && itemDate <= finalEndDate;
     });
 
     if (filtered.length === 0) {
@@ -54,10 +60,15 @@ const ReportsPage = () => {
       return;
     }
 
+    if (!startDate || !endDate) {
+      alert("Por favor selecciona un rango de fechas válido.");
+      return;
+    }
+
     if (reportType === "excel") {
-      exportToExcel(filteredData); // ✅ Exportar los datos filtrados a Excel
+      exportToExcel(filteredData);
     } else {
-      generatePDFReport(filteredData); // ✅ Exportar los datos filtrados a PDF
+      generatePDFReport(filteredData, startDate, endDate); // ✅ Pasar las fechas correctamente
     }
   };
 
