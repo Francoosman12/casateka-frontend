@@ -246,6 +246,8 @@ pdf.addImage(logo, "PNG", 150, 10, 30, 20); // ✅ Importación directa // Posic
     
                 const { formattedRows, rowStyles } = formatTableData(otaData);
 
+                formattedRows.push(["","","","","","","","","Subtotal:", formatNumber(subtotal)]);
+
                 autoTable(pdf, {
                     head: [["No.", "Fecha Pago", "Nombre", "Habitación", "Tipo Hab.", "Check-In", "Check-Out", "Autorización", "Monto Aut.", "Importe Total"]],
                     body: formattedRows,
@@ -253,7 +255,8 @@ pdf.addImage(logo, "PNG", 150, 10, 30, 20); // ✅ Importación directa // Posic
                     theme: "grid",
                     styles: { fontSize: 8, cellPadding: 2 },
                     headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] },
-                    bodyStyles: rowStyles // ✅ Aplicar colores intercalados en cada fila
+                    bodyStyles: rowStyles,
+                    alternateRowStyles: { fillColor: [240, 240, 240] } // ✅ Alternar filas como en Bootstrap
                 });
     
                 startY = pdf.lastAutoTable.finalY + 6;

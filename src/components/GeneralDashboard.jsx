@@ -43,19 +43,24 @@ const GeneralDashboard = () => {
       return;
     }
 
-    const start = new Date(startDate);
-    const end = new Date(endDate);
+    // ✅ Convertimos a `YYYY-MM-DD` para asegurar comparación precisa
+    const adjustedStartDate = new Date(startDate).toISOString().split("T")[0];
 
-    // ✅ Ajustamos `startDate` a las 00:00:00 para incluir toda la fecha inicial
-    start.setHours(0, 0, 0, 0);
+    // ✅ Ajustamos `endDate` para incluir todo el día
+    const adjustedEndDate = new Date(endDate);
+    adjustedEndDate.setHours(23, 59, 59, 999);
+    const finalEndDate = adjustedEndDate.toISOString().split("T")[0];
 
-    // ✅ Ajustamos `endDate` a las 23:59:59 para incluir toda la fecha final
-    end.setHours(23, 59, 59, 999);
-
+    // ✅ Filtramos los datos usando el mismo método que en reportes
     const filtered = data.filter((item) => {
-      const itemDate = new Date(item.fechaPago);
-      return itemDate >= start && itemDate <= end;
+      const itemDate = new Date(item.fechaPago).toISOString().split("T")[0]; // 🔹 Comparar sin horas
+      return itemDate >= adjustedStartDate && itemDate <= finalEndDate;
     });
+
+    if (filtered.length === 0) {
+      alert("No hay movimientos en el rango de fechas seleccionado.");
+      return;
+    }
 
     setFilteredData(filtered);
   };
