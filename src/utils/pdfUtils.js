@@ -1,6 +1,6 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
-import logo from "../assets/logo-casateka.png";
+import logo from "../assets/logocasateka.png";
 
 export const generatePDFReport = async (data, startDate, endDate) => {
     if (!startDate || !endDate) {
@@ -88,7 +88,7 @@ pdf.setDrawColor(0, 0, 0);
 pdf.setLineWidth(0.5);
 pdf.line(10, 35, 200, 35);
 
-pdf.addImage(logo, "PNG", 150, 10, 30, 20); // ✅ Importación directa // Posición y tamaño del logo
+pdf.addImage(logo, "PNG", 150, 5, 30, 25); // ✅ Importación directa // Posición y tamaño del logo
 
     if (!data || data.length === 0) {
         pdf.text("No hay datos disponibles para el reporte.", 10, 25);
@@ -268,8 +268,8 @@ pdf.addImage(logo, "PNG", 150, 10, 30, 20); // ✅ Importación directa // Posic
                     startY = 10; // ✅ Reiniciar margen en nueva página
     
                     // ✅ Agregar número de página inmediatamente después de la nueva página
-                    pdf.setFontSize(10);
-                    pdf.text(` ${pageNumber}`, 185, 290);
+                    //pdf.setFontSize(10);
+                    //pdf.text(` ${pageNumber}`, 185, 290);
                 }
             });
         });

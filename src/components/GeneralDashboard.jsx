@@ -10,13 +10,15 @@ import TransferData from "./TransferData";
 import Totals from "./Totals";
 
 const GeneralDashboard = () => {
-  const [data, setData] = useState([]); // Estado para almacenar datos reales
+  const [data, setData] = useState([]); // Datos reales
   const [filteredData, setFilteredData] = useState([]); // Datos filtrados
   const [loading, setLoading] = useState(true);
   const [startDate, setStartDate] = useState(""); // Fecha inicial del filtro
   const [endDate, setEndDate] = useState(""); // Fecha final del filtro
-  const buttonsRef = useRef(null); // Ref para los botones que queremos ocultar
-  const formRef = useRef(null); // Ref para ocultar el formulario
+  const [selectedMonth, setSelectedMonth] = useState(""); // Nuevo estado para el filtro por mes
+
+  const buttonsRef = useRef(null);
+  const formRef = useRef(null);
 
   // URL base desde la variable de entorno
   const backendUrl = import.meta.env.VITE_BACKEND_URL;
@@ -24,22 +26,39 @@ const GeneralDashboard = () => {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get(`${backendUrl}/api/movements`); // Utilizando la variable de entorno
-        setData(response.data); // Asignar los datos al estado
-        setFilteredData(response.data); // Inicialmente, los datos no están filtrados
+        const response = await axios.get(`${backendUrl}/api/movements`);
+        setData(response.data);
+        setFilteredData(response.data);
         setLoading(false);
       } catch (error) {
         console.error("Error al obtener los datos:", error.message);
         setLoading(false);
       }
     };
-
     fetchData();
   }, [backendUrl]);
 
+  // Función para filtrar por rango de fechas y, opcionalmente, por mes
   const handleFilter = () => {
+    // ✅ Si no hay fechas pero hay un mes seleccionado, filtrar solo por mes
     if (!startDate || !endDate) {
-      alert("Por favor selecciona un rango de fechas válido.");
+      if (selectedMonth === "") {
+        alert("Por favor selecciona un rango de fechas o un mes.");
+        return;
+      }
+
+      // ✅ Filtrar solo por mes
+      const filtered = data.filter(
+        (item) =>
+          new Date(item.fechaPago).getMonth() === parseInt(selectedMonth)
+      );
+
+      if (filtered.length === 0) {
+        alert("No hay movimientos en el mes seleccionado.");
+        return;
+      }
+
+      setFilteredData(filtered);
       return;
     }
 
@@ -51,14 +70,22 @@ const GeneralDashboard = () => {
     adjustedEndDate.setHours(23, 59, 59, 999);
     const finalEndDate = adjustedEndDate.toISOString().split("T")[0];
 
-    // ✅ Filtramos los datos usando el mismo método que en reportes
-    const filtered = data.filter((item) => {
-      const itemDate = new Date(item.fechaPago).toISOString().split("T")[0]; // 🔹 Comparar sin horas
+    // ✅ Filtramos los datos por rango de fechas
+    let filtered = data.filter((item) => {
+      const itemDate = new Date(item.fechaPago).toISOString().split("T")[0];
       return itemDate >= adjustedStartDate && itemDate <= finalEndDate;
     });
 
+    // ✅ Si también se seleccionó un mes, aplicar el filtro adicional
+    if (selectedMonth !== "") {
+      filtered = filtered.filter(
+        (item) =>
+          new Date(item.fechaPago).getMonth() === parseInt(selectedMonth)
+      );
+    }
+
     if (filtered.length === 0) {
-      alert("No hay movimientos en el rango de fechas seleccionado.");
+      alert("No hay movimientos en el rango de fechas y mes seleccionado.");
       return;
     }
 
@@ -76,20 +103,22 @@ const GeneralDashboard = () => {
 
   return (
     <Container fluid className="mt-5">
-      {/* Filtros por Fecha */}
+      {/* Filtros: Por fecha y por mes */}
       <Card className="mb-4 shadow-sm border-0 w-100">
         <Card.Body>
           <Card.Title className="text-center display-4 font-weight-bold">
             Dashboard General
           </Card.Title>
           <Card.Text className="text-center text-muted fs-5">
-            Filtra por rango de fechas para personalizar los datos.
+            Filtra por rango de fechas o selecciona un mes para personalizar los
+            datos.
           </Card.Text>
           <Form
             ref={formRef}
             className="d-flex justify-content-center align-items-center gap-3 mx-auto"
             style={{ maxWidth: "600px" }}
           >
+            {/* Filtro por rango de fechas */}
             <Form.Group className="mb-0">
               <Form.Label className="fw-bold">Desde:</Form.Label>
               <Form.Control
@@ -107,6 +136,29 @@ const GeneralDashboard = () => {
                 onChange={(e) => setEndDate(e.target.value)}
                 className="border-secondary"
               />
+            </Form.Group>
+            {/* Filtro por Mes */}
+            <Form.Group className="mb-0">
+              <Form.Label className="fw-bold">Mes:</Form.Label>
+              <Form.Select
+                value={selectedMonth}
+                onChange={(e) => setSelectedMonth(e.target.value)}
+                className="border-secondary"
+              >
+                <option value="">Todos</option>
+                <option value="0">Enero</option>
+                <option value="1">Febrero</option>
+                <option value="2">Marzo</option>
+                <option value="3">Abril</option>
+                <option value="4">Mayo</option>
+                <option value="5">Junio</option>
+                <option value="6">Julio</option>
+                <option value="7">Agosto</option>
+                <option value="8">Septiembre</option>
+                <option value="9">Octubre</option>
+                <option value="10">Noviembre</option>
+                <option value="11">Diciembre</option>
+              </Form.Select>
             </Form.Group>
             <Button
               variant="primary"
