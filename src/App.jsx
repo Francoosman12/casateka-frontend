@@ -11,8 +11,9 @@ import Totals from "../src/components/Totals";
 import GeneralDashboard from "../src/components/GeneralDashboard";
 import Dashboard from "../src/pages/Dashboard";
 import Reports from "../src/pages/ReportsPage";
-import Movements from "../src/pages/Movements"; // Importar la nueva página Movements
-import NavbarComponent from "../src/components/Navbar"; // Importar el navbar
+import Movements from "../src/pages/Movements";
+import NavbarComponent from "../src/components/Navbar";
+import AnalysisDashboard from "../src/pages/AnalysisDashboard"; // ✅ Importar la nueva página de análisis
 
 function App() {
   return (
@@ -31,8 +32,12 @@ function App() {
         <Route path="/general-dashboard" element={<GeneralDashboard />} />
         <Route path="/reports" element={<Reports />} />
         <Route path="/movement-form" element={<MovementForm />} />
-        <Route path="/movements" element={<Movements />} />{" "}
-        {/* Nueva ruta para Movements */}
+        <Route path="/movements" element={<Movements />} />
+        <Route
+          path="/dashboard-analisis"
+          element={<AnalysisDashboard />}
+        />{" "}
+        {/* ✅ Nueva ruta */}
       </Routes>
     </Router>
   );

@@ -1,6 +1,6 @@
 import React from "react";
 import { Navbar, Nav, Container } from "react-bootstrap";
-import logo from "../assets/logo-casateka.png"; // Ruta al archivo del logo
+import logo from "../assets/logocasateka.png"; // Ruta al archivo del logo
 
 const NavbarComponent = () => {
   return (
@@ -22,10 +22,13 @@ const NavbarComponent = () => {
         <Navbar.Collapse id="responsive-navbar-nav">
           <Nav>
             <Nav.Link href="/">Crear Movimiento</Nav.Link>
-            <Nav.Link href="/general-dashboard">Dashboard General</Nav.Link>
+            <Nav.Link href="/general-dashboard">Tabla General</Nav.Link>
             <Nav.Link href="/movements">Movimientos</Nav.Link>
-            <Nav.Link href="/reports">Reportes</Nav.Link>{" "}
-            {/* ✅ Nueva opción en el menú */}
+            <Nav.Link href="/reports">Reportes</Nav.Link>
+            <Nav.Link href="/dashboard-analisis">
+              Dashboard de Análisis
+            </Nav.Link>{" "}
+            {/* ✅ Nueva opción */}
           </Nav>
         </Navbar.Collapse>
       </Container>
