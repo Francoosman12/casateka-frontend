@@ -73,15 +73,25 @@ const tarifaPromedioPorNoche = totalNochesVendidas > 0 ? totalEstancia / totalNo
 
     const totalGeneral = totalEfectivoMXN + totalEfectivoUSD + totalEfectivoEUR + totalTarjetaCreditoDebito + totalTarjetaVirtual + totalTransferencias;
 
+//Separar las fechas por dias, mes y año
+const options = { year: "numeric", month: "long" };
+const startDay = formattedStartDate.getDate(); // ✅ Extraer solo el día de inicio
+const endDay = formattedEndDate.getDate(); // ✅ Extraer solo el día de fin
+const monthYear = formattedEndDate.toLocaleDateString("es-MX", options); // ✅ Obtener mes y año
+
+
+
     // 🔹 Establecer el encabezado del reporte
     // 🔹 Agregar encabezado con título, descripción y periodo
-pdf.setFontSize(10);
+pdf.setFontSize(14);
 pdf.setTextColor(40, 40, 40);
 pdf.text("Operadora Kapen S.A de C.V.", 10, 10);
 pdf.setFontSize(14);
 pdf.text("Reporte General de Ingresos de Hotel Casa Teka", 10, 20);
-pdf.setFontSize(12);
-pdf.text(`Periodo del ${formattedStartDate.toLocaleDateString("es-MX")} al ${formattedEndDate.toLocaleDateString("es-MX")}.`, 10, 30);
+pdf.setFontSize(14);
+//pdf.text(`Periodo del ${formattedStartDate.toLocaleDateString("es-MX")} al ${formattedEndDate.toLocaleDateString("es-MX")}.`, 10, 30);
+pdf.text(`Periodo de ${startDay} al ${endDay} de ${monthYear}`, 10, 30);    
+
 
 // 🔹 Línea de separación debajo del encabezado
 pdf.setDrawColor(0, 0, 0);
@@ -102,7 +112,7 @@ pdf.addImage(logo, "PNG", 150, 5, 30, 25); // ✅ Importación directa // Posici
 
     // 🔹 Mini tabla de Efectivo
     autoTable(pdf, {
-        head: [["Descripción", "Total"]],
+        head: [["Efectivo", "Total"]],
         body: [
             ["Efectivo MXN", formatNumber(totalEfectivoMXN)],
             ["Efectivo USD", formatNumber(totalEfectivoUSD)],
@@ -119,7 +129,7 @@ pdf.addImage(logo, "PNG", 150, 5, 30, 25); // ✅ Importación directa // Posici
     
     // 🔹 Mini tabla de Tarjetas
     autoTable(pdf, {
-        head: [["Descripción", "Total"]],
+        head: [["Banco", "Total"]],
         body: [
             ["Tarjeta Débito/Crédito", formatNumber(totalTarjetaCreditoDebito)],
             ["Tarjetas Virtuales", formatNumber(totalTarjetaVirtual)],
@@ -136,7 +146,7 @@ pdf.addImage(logo, "PNG", 150, 5, 30, 25); // ✅ Importación directa // Posici
     
     // 🔹 Mini tabla de Conceptos
     autoTable(pdf, {
-        head: [["Descripción", "Total"]],
+        head: [["Concepto", "Total"]],
         body: [
             ["Cobro de Estancia", formatNumber(totalEstancia)],
             ["Amenidades", formatNumber(totalAmenidades)]
@@ -152,7 +162,7 @@ pdf.addImage(logo, "PNG", 150, 5, 30, 25); // ✅ Importación directa // Posici
     
     // 🔹 Mini tabla de OTAs
     autoTable(pdf, {
-        head: [["Descripción", "Total"]],
+        head: [["OTA", "Total"]],
         body: [
             ["Booking", formatNumber(totalBooking)],
             ["Expedia", formatNumber(totalExpedia)],
@@ -169,7 +179,7 @@ pdf.addImage(logo, "PNG", 150, 5, 30, 25); // ✅ Importación directa // Posici
     
     // 🔹 Mini tabla de Totales Generales
     autoTable(pdf, {
-        head: [["Descripción", "Total"]],
+        head: [["Totales", "Total"]],
         body: [
             ["Total General", formatNumber(totalGeneral)],
             ["Tarifa Promedio por Noche", formatNumber(tarifaPromedioPorNoche)],
