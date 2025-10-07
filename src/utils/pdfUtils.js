@@ -252,7 +252,11 @@ pdf.addImage(logo, "PNG", 150, 5, 30, 25); // ✅ Importación directa // Posici
                 startY += 3;
     
                 const otaData = groupedBySubtipo[subtipo][concepto][ota];
-                const subtotal = otaData.reduce((sum, item) => sum + (parseFloat(item.ingreso?.montoTotal) || 0), 0);
+                const subtotal = otaData.reduce((sum, item) => {
+    // Convierte el monto a string, elimina las comas, y luego lo convierte a número
+    const montoSinComas = String(item.ingreso?.montoTotal || '0').replace(/,/g, '');
+    return sum + (parseFloat(montoSinComas) || 0);
+}, 0);
     
                 const { formattedRows, rowStyles } = formatTableData(otaData);
 
