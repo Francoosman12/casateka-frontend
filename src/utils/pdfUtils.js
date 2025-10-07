@@ -27,51 +27,63 @@ formattedEndDate.setDate(formattedEndDate.getDate() + 1); // ✅ Ajuste para cor
 
  
 
-    // 🔹 Calcular totales antes de construir el PDF
-    const totalEfectivoMXN = data.reduce((total, item) =>
-        total + (item.ingreso?.tipo === "Efectivo" && item.ingreso?.subtipo === "Pesos" ? parseFloat(item.ingreso?.montoTotal) || 0 : 0), 0);
+ // =================== INICIA BLOQUE DE CÓDIGO CORREGIDO ===================
 
-    const totalEfectivoUSD = data.reduce((total, item) =>
-        total + (item.ingreso?.tipo === "Efectivo" && item.ingreso?.subtipo === "Dólares" ? parseFloat(item.ingreso?.montoTotal) || 0 : 0), 0);
+// Helper para convertir y limpiar el monto de forma segura
+const parseMonto = (monto) => {
+    const montoSinComas = String(monto || '0').replace(/,/g, '');
+    return parseFloat(montoSinComas) || 0;
+};
 
-    const totalEfectivoEUR = data.reduce((total, item) =>
-        total + (item.ingreso?.tipo === "Efectivo" && item.ingreso?.subtipo === "Euros" ? parseFloat(item.ingreso?.montoTotal) || 0 : 0), 0);
+// 🔹 Calcular totales antes de construir el PDF (VERSIÓN CORREGIDA)
+const totalEfectivoMXN = data.reduce((total, item) =>
+    total + (item.ingreso?.tipo === "Efectivo" && item.ingreso?.subtipo === "Pesos" ? parseMonto(item.ingreso?.montoTotal) : 0), 0);
+
+const totalEfectivoUSD = data.reduce((total, item) =>
+    total + (item.ingreso?.tipo === "Efectivo" && item.ingreso?.subtipo === "Dólares" ? parseMonto(item.ingreso?.montoTotal) : 0), 0);
+
+const totalEfectivoEUR = data.reduce((total, item) =>
+    total + (item.ingreso?.tipo === "Efectivo" && item.ingreso?.subtipo === "Euros" ? parseMonto(item.ingreso?.montoTotal) : 0), 0);
 
 // 🔹 Calcular totales de tarjetas antes de construir el PDF
 const totalTarjetaCreditoDebito = data.reduce((total, item) =>
-    total + (item.ingreso?.tipo === "Tarjeta" && item.ingreso?.subtipo === "Débito/Crédito" ? parseFloat(item.ingreso?.montoTotal) || 0 : 0), 0);
+    total + (item.ingreso?.tipo === "Tarjeta" && item.ingreso?.subtipo === "Débito/Crédito" ? parseMonto(item.ingreso?.montoTotal) : 0), 0);
 
 const totalTarjetaVirtual = data.reduce((total, item) =>
-    total + (item.ingreso?.tipo === "Tarjeta" && item.ingreso?.subtipo === "Virtual" ? parseFloat(item.ingreso?.montoTotal) || 0 : 0), 0);
+    total + (item.ingreso?.tipo === "Tarjeta" && item.ingreso?.subtipo === "Virtual" ? parseMonto(item.ingreso?.montoTotal) : 0), 0);
 
 const totalTransferencias = data.reduce((total, item) =>
-    total + (item.ingreso?.tipo === "Tarjeta" && item.ingreso?.subtipo === "Transferencias" ? parseFloat(item.ingreso?.montoTotal) || 0 : 0), 0);
+    total + (item.ingreso?.tipo === "Tarjeta" && item.ingreso?.subtipo === "Transferencias" ? parseMonto(item.ingreso?.montoTotal) : 0), 0);
 
 // 🔹 Calcular totales de conceptos antes de construir el PDF
 const totalEstancia = data.reduce((total, item) =>
-    total + (item.concepto === "Cobro de estancia" ? parseFloat(item.ingreso?.montoTotal) || 0 : 0), 0);
+    total + (item.concepto === "Cobro de estancia" ? parseMonto(item.ingreso?.montoTotal) : 0), 0);
 
 const totalAmenidades = data.reduce((total, item) =>
-    total + (item.concepto === "Amenidades" ? parseFloat(item.ingreso?.montoTotal) || 0 : 0), 0);
+    total + (item.concepto === "Amenidades" ? parseMonto(item.ingreso?.montoTotal) : 0), 0);
 
 // 🔹 Calcular totales por OTA antes de construir el PDF
 const totalBooking = data.reduce((total, item) =>
-    total + (item.ota === "Booking" ? parseFloat(item.ingreso?.montoTotal) || 0 : 0), 0);
+    total + (item.ota === "Booking" ? parseMonto(item.ingreso?.montoTotal) : 0), 0);
 
 const totalExpedia = data.reduce((total, item) =>
-    total + (item.ota === "Expedia" ? parseFloat(item.ingreso?.montoTotal) || 0 : 0), 0);
+    total + (item.ota === "Expedia" ? parseMonto(item.ingreso?.montoTotal) : 0), 0);
 
 const totalDirecta = data.reduce((total, item) =>
-    total + (item.ota === "Directa" ? parseFloat(item.ingreso?.montoTotal) || 0 : 0), 0);
+    total + (item.ota === "Directa" ? parseMonto(item.ingreso?.montoTotal) : 0), 0);
 
-// 🔹 Calcular total de noches vendidas
+// 🔹 Calcular total de noches vendidas (este cálculo no necesita cambios)
 const totalNochesVendidas = data.reduce((total, item) =>
     total + (item.concepto === "Cobro de estancia" ? item.noches || 0 : 0), 0);
 
-// 🔹 Calcular tarifa promedio por noche
+// 🔹 Calcular tarifa promedio por noche (se corregirá automáticamente al tener `totalEstancia` correcto)
 const tarifaPromedioPorNoche = totalNochesVendidas > 0 ? totalEstancia / totalNochesVendidas : 0;
 
-    const totalGeneral = totalEfectivoMXN + totalEfectivoUSD + totalEfectivoEUR + totalTarjetaCreditoDebito + totalTarjetaVirtual + totalTransferencias;
+// 🔹 Calcular total general (se corregirá automáticamente al tener los otros totales correctos)
+const totalGeneral = totalEfectivoMXN + totalEfectivoUSD + totalEfectivoEUR + totalTarjetaCreditoDebito + totalTarjetaVirtual + totalTransferencias;
+
+
+// =================== FINALIZA BLOQUE DE CÓDIGO CORREGIDO ===================
 
 //Separar las fechas por dias, mes y año
 const options = { year: "numeric", month: "long" };
