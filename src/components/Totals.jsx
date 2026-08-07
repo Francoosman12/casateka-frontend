@@ -229,6 +229,7 @@ const Totals = ({ data = [] }) => {
               <tr>
                 <td>MXN</td>
                 <td>
+                  MXN{" "}
                   {totalEfectivoMXN.toLocaleString("es-MX", {
                     style: "currency",
                     currency: "MXN",
@@ -238,6 +239,7 @@ const Totals = ({ data = [] }) => {
               <tr>
                 <td>USD</td>
                 <td>
+                  USD{" "}
                   {totalEfectivoUSD.toLocaleString("en-US", {
                     style: "currency",
                     currency: "USD",
@@ -247,6 +249,7 @@ const Totals = ({ data = [] }) => {
               <tr>
                 <td>EUR</td>
                 <td>
+                  EUR{" "}
                   {totalEfectivoEUR.toLocaleString("de-DE", {
                     style: "currency",
                     currency: "EUR",
