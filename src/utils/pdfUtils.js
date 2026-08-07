@@ -93,34 +93,65 @@ const monthYear = formattedEndDate.toLocaleDateString("es-MX", options); // ✅ 
 
 
 
-    // 🔹 Establecer el encabezado del reporte
-    // 🔹 Agregar encabezado con título, descripción y periodo
-pdf.setFontSize(14);
-pdf.setTextColor(40, 40, 40);
-pdf.text("Operadora Kapen S.A de C.V.", 10, 10);
-pdf.setFontSize(14);
-pdf.text("Reporte General de Ingresos de Hotel Casa Teka", 10, 20);
-pdf.setFontSize(14);
-//pdf.text(`Periodo del ${formattedStartDate.toLocaleDateString("es-MX")} al ${formattedEndDate.toLocaleDateString("es-MX")}.`, 10, 30);
-pdf.text(`Periodo de ${startDay} al ${endDay} de ${monthYear}`, 10, 30);    
+    // 🔹 Portada del reporte
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+    const centerX = pageWidth / 2;
 
+    const logoWidth = 38;
+    const logoHeight = logoWidth * (2200 / 1700); // mantiene la proporción real del logo
+    const logoY = 55;
+    pdf.addImage(logo, "PNG", centerX - logoWidth / 2, logoY, logoWidth, logoHeight);
 
-// 🔹 Línea de separación debajo del encabezado
-pdf.setDrawColor(0, 0, 0);
-pdf.setLineWidth(0.5);
-pdf.line(10, 35, 200, 35);
+    let coverY = logoY + logoHeight + 18;
 
-pdf.addImage(logo, "PNG", 150, 5, 30, 25); // ✅ Importación directa // Posición y tamaño del logo
+    pdf.setFontSize(13);
+    pdf.setTextColor(90, 90, 90);
+    pdf.text("Operadora Kapen S.A de C.V.", centerX, coverY, { align: "center" });
+
+    coverY += 12;
+    pdf.setFontSize(18);
+    pdf.setTextColor(20, 20, 20);
+    pdf.text("Reporte General de Ingresos de Hotel Casa Teka", centerX, coverY, {
+        align: "center",
+        maxWidth: 160,
+    });
+
+    coverY += 18;
+    pdf.setDrawColor(63, 92, 74); // verde de marca
+    pdf.setLineWidth(0.6);
+    pdf.line(centerX - 25, coverY, centerX + 25, coverY);
+
+    coverY += 12;
+    pdf.setFontSize(12);
+    pdf.setTextColor(60, 60, 60);
+    pdf.text(`Periodo de ${startDay} al ${endDay} de ${monthYear}`, centerX, coverY, {
+        align: "center",
+    });
+
+    pdf.setFontSize(9);
+    pdf.setTextColor(150, 150, 150);
+    pdf.text(
+        `Generado el ${currentDate.toLocaleDateString("es-MX")}`,
+        centerX,
+        pageHeight - 15,
+        { align: "center" }
+    );
 
     if (!data || data.length === 0) {
-        pdf.text("No hay datos disponibles para el reporte.", 10, 25);
+        pdf.addPage();
+        pdf.setFontSize(12);
+        pdf.setTextColor(40, 40, 40);
+        pdf.text("No hay datos disponibles para el reporte.", 10, 20);
         pdf.save(fileName);
         return;
     }
 
+    pdf.addPage();
+    pageNumber = 2; // la portada (página 1) no lleva numeración
 
     // 🔹 Agregar la tabla de totales antes del desglose detallado
-    let startY = 50; // ✅ Definir la posición inicial para las tablas
+    let startY = 20; // ✅ Definir la posición inicial para las tablas
 
     // 🔹 Mini tabla de Efectivo
     autoTable(pdf, {
