@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useMemo, useState, useRef } from "react";
 import { Container, Row, Col, Card, Button, Spinner, Form } from "react-bootstrap";
 import apiClient from "../api/client";
 import CashData from "./CashData";
@@ -15,10 +15,21 @@ const GeneralDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [startDate, setStartDate] = useState(""); // Fecha inicial del filtro
   const [endDate, setEndDate] = useState(""); // Fecha final del filtro
-  const [selectedMonth, setSelectedMonth] = useState(""); // Nuevo estado para el filtro por mes
+  const [selectedMonth, setSelectedMonth] = useState(""); // Filtro por mes
+  const [selectedYear, setSelectedYear] = useState(""); // Filtro por año
 
   const buttonsRef = useRef(null);
   const formRef = useRef(null);
+
+  // Años presentes en los datos reales, más recientes primero
+  const availableYears = useMemo(() => {
+    const years = new Set(
+      data
+        .map((item) => item.fechaPago && new Date(item.fechaPago).getFullYear())
+        .filter((year) => !Number.isNaN(year))
+    );
+    return Array.from(years).sort((a, b) => b - a);
+  }, [data]);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -35,58 +46,56 @@ const GeneralDashboard = () => {
     fetchData();
   }, []);
 
-  // Función para filtrar por rango de fechas y, opcionalmente, por mes
+  // Filtra combinando, si están presentes, rango de fechas + año + mes
   const handleFilter = () => {
-    // ✅ Si no hay fechas pero hay un mes seleccionado, filtrar solo por mes
-    if (!startDate || !endDate) {
-      if (selectedMonth === "") {
-        alert("Por favor selecciona un rango de fechas o un mes.");
-        return;
-      }
-
-      // ✅ Filtrar solo por mes
-      const filtered = data.filter(
-        (item) =>
-          new Date(item.fechaPago).getMonth() === parseInt(selectedMonth)
-      );
-
-      if (filtered.length === 0) {
-        alert("No hay movimientos en el mes seleccionado.");
-        return;
-      }
-
-      setFilteredData(filtered);
+    if (!startDate && !endDate && selectedYear === "" && selectedMonth === "") {
+      alert("Por favor selecciona un rango de fechas, un año o un mes.");
       return;
     }
 
-    // ✅ Convertimos a `YYYY-MM-DD` para asegurar comparación precisa
-    const adjustedStartDate = new Date(startDate).toISOString().split("T")[0];
+    let filtered = data;
 
-    // ✅ Ajustamos `endDate` para incluir todo el día
-    const adjustedEndDate = new Date(endDate);
-    adjustedEndDate.setHours(23, 59, 59, 999);
-    const finalEndDate = adjustedEndDate.toISOString().split("T")[0];
+    if (startDate && endDate) {
+      // ✅ Convertimos a `YYYY-MM-DD` para asegurar comparación precisa
+      const adjustedStartDate = new Date(startDate).toISOString().split("T")[0];
 
-    // ✅ Filtramos los datos por rango de fechas
-    let filtered = data.filter((item) => {
-      const itemDate = new Date(item.fechaPago).toISOString().split("T")[0];
-      return itemDate >= adjustedStartDate && itemDate <= finalEndDate;
-    });
+      // ✅ Ajustamos `endDate` para incluir todo el día
+      const adjustedEndDate = new Date(endDate);
+      adjustedEndDate.setHours(23, 59, 59, 999);
+      const finalEndDate = adjustedEndDate.toISOString().split("T")[0];
 
-    // ✅ Si también se seleccionó un mes, aplicar el filtro adicional
+      filtered = filtered.filter((item) => {
+        const itemDate = new Date(item.fechaPago).toISOString().split("T")[0];
+        return itemDate >= adjustedStartDate && itemDate <= finalEndDate;
+      });
+    }
+
+    if (selectedYear !== "") {
+      filtered = filtered.filter(
+        (item) => new Date(item.fechaPago).getFullYear() === parseInt(selectedYear)
+      );
+    }
+
     if (selectedMonth !== "") {
       filtered = filtered.filter(
-        (item) =>
-          new Date(item.fechaPago).getMonth() === parseInt(selectedMonth)
+        (item) => new Date(item.fechaPago).getMonth() === parseInt(selectedMonth)
       );
     }
 
     if (filtered.length === 0) {
-      alert("No hay movimientos en el rango de fechas y mes seleccionado.");
+      alert("No hay movimientos para los filtros seleccionados.");
       return;
     }
 
     setFilteredData(filtered);
+  };
+
+  const handleReset = () => {
+    setStartDate("");
+    setEndDate("");
+    setSelectedYear("");
+    setSelectedMonth("");
+    setFilteredData(data);
   };
 
   if (loading) {
@@ -107,12 +116,12 @@ const GeneralDashboard = () => {
             Dashboard General
           </Card.Title>
           <Card.Text className="text-center text-muted fs-5">
-            Filtra por rango de fechas o selecciona un mes para personalizar los
-            datos.
+            Filtra por rango de fechas, o combina año y mes para personalizar
+            los datos.
           </Card.Text>
-          <Form ref={formRef} className="mx-auto" style={{ maxWidth: "700px" }}>
+          <Form ref={formRef} className="mx-auto" style={{ maxWidth: "900px" }}>
             <Row className="g-3 justify-content-center align-items-end">
-              <Col xs={12} sm={6} md={3}>
+              <Col xs={6} md={2}>
                 <Form.Group>
                   <Form.Label className="fw-bold">Desde</Form.Label>
                   <Form.Control
@@ -123,7 +132,7 @@ const GeneralDashboard = () => {
                   />
                 </Form.Group>
               </Col>
-              <Col xs={12} sm={6} md={3}>
+              <Col xs={6} md={2}>
                 <Form.Group>
                   <Form.Label className="fw-bold">Hasta</Form.Label>
                   <Form.Control
@@ -134,7 +143,24 @@ const GeneralDashboard = () => {
                   />
                 </Form.Group>
               </Col>
-              <Col xs={12} sm={6} md={3}>
+              <Col xs={6} md={2}>
+                <Form.Group>
+                  <Form.Label className="fw-bold">Año</Form.Label>
+                  <Form.Select
+                    value={selectedYear}
+                    onChange={(e) => setSelectedYear(e.target.value)}
+                    className="border-secondary"
+                  >
+                    <option value="">Todos</option>
+                    {availableYears.map((year) => (
+                      <option key={year} value={year}>
+                        {year}
+                      </option>
+                    ))}
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col xs={6} md={2}>
                 <Form.Group>
                   <Form.Label className="fw-bold">Mes</Form.Label>
                   <Form.Select
@@ -158,13 +184,20 @@ const GeneralDashboard = () => {
                   </Form.Select>
                 </Form.Group>
               </Col>
-              <Col xs={12} sm={6} md={3}>
+              <Col xs={12} md={4} className="d-flex gap-2">
                 <Button
                   variant="primary"
                   onClick={handleFilter}
-                  className="fw-bold w-100"
+                  className="fw-bold flex-fill"
                 >
                   Filtrar
+                </Button>
+                <Button
+                  variant="outline-secondary"
+                  onClick={handleReset}
+                  className="flex-fill"
+                >
+                  Ver todo
                 </Button>
               </Col>
             </Row>
