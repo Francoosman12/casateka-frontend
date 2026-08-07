@@ -1,5 +1,6 @@
 import React from "react";
-import { Container, Table, Row, Col, Card } from "react-bootstrap";
+import { Container, Row, Col, Card } from "react-bootstrap";
+import PaginatedTable from "./common/PaginatedTable";
 
 const CashEuroData = ({ data }) => {
   // Filtrar movimientos en efectivo en euros por concepto de estancia y amenidades
@@ -76,8 +77,10 @@ const CashEuroData = ({ data }) => {
               <Card.Header className="bg-light text-dark">
                 <h4>{ota}</h4>
               </Card.Header>
-              <Table striped bordered hover className="cash-euro-data-table">
-                <thead>
+              <PaginatedTable
+                className="cash-euro-data-table"
+                items={groupedEstancia[ota]}
+                headerRow={
                   <tr className="bg-primary text-white">
                     <th>No.</th>
                     <th>Fecha de Pago</th>
@@ -88,22 +91,20 @@ const CashEuroData = ({ data }) => {
                     <th>Check-Out</th>
                     <th>Importe</th>
                   </tr>
-                </thead>
-                <tbody>
-                  {groupedEstancia[ota].map((item, index) => (
-                    <tr key={item._id}>
-                      <td>{index + 1}</td>
-                      <td>{new Date(item.fechaPago).toLocaleDateString()}</td>
-                      <td>{item.nombre}</td>
-                      <td>{item.habitacion?.numero || "N/A"}</td>
-                      <td>{item.habitacion?.tipo || "N/A"}</td>
-                      <td>{new Date(item.checkIn).toLocaleDateString()}</td>
-                      <td>{new Date(item.checkOut).toLocaleDateString()}</td>
-                      <td>{item.ingreso?.montoTotal || "€0.00"}</td>{" "}
-                      {/* ✅ Usa montoTotal */}
-                    </tr>
-                  ))}
-                  {/* Subtotal */}
+                }
+                renderRow={(item, index) => (
+                  <tr key={item._id}>
+                    <td>{index + 1}</td>
+                    <td>{new Date(item.fechaPago).toLocaleDateString()}</td>
+                    <td>{item.nombre}</td>
+                    <td>{item.habitacion?.numero || "N/A"}</td>
+                    <td>{item.habitacion?.tipo || "N/A"}</td>
+                    <td>{new Date(item.checkIn).toLocaleDateString()}</td>
+                    <td>{new Date(item.checkOut).toLocaleDateString()}</td>
+                    <td>{item.ingreso?.montoTotal || "€0.00"}</td>
+                  </tr>
+                )}
+                subtotalRow={
                   <tr className="bg-light">
                     <td colSpan="7" className="text-end fw-bold">
                       Subtotal:
@@ -112,8 +113,8 @@ const CashEuroData = ({ data }) => {
                       {calculateSubtotal(groupedEstancia[ota])}
                     </td>
                   </tr>
-                </tbody>
-              </Table>
+                }
+              />
             </Card>
           ))}
         </Col>
@@ -124,8 +125,9 @@ const CashEuroData = ({ data }) => {
         <Col>
           <h3 className="text-dark">Amenidades</h3>
           <Card>
-            <Table striped bordered hover>
-              <thead>
+            <PaginatedTable
+              items={efectivoEurosAmenidades}
+              headerRow={
                 <tr className="bg-primary text-white">
                   <th>No.</th>
                   <th>Fecha de Pago</th>
@@ -136,22 +138,20 @@ const CashEuroData = ({ data }) => {
                   <th>Check-Out</th>
                   <th>Importe</th>
                 </tr>
-              </thead>
-              <tbody>
-                {efectivoEurosAmenidades.map((item, index) => (
-                  <tr key={item._id}>
-                    <td>{index + 1}</td>
-                    <td>{new Date(item.fechaPago).toLocaleDateString()}</td>
-                    <td>{item.nombre}</td>
-                    <td>{item.habitacion?.numero || "N/A"}</td>
-                    <td>{item.habitacion?.tipo || "N/A"}</td>
-                    <td>{new Date(item.checkIn).toLocaleDateString()}</td>
-                    <td>{new Date(item.checkOut).toLocaleDateString()}</td>
-                    <td>{item.ingreso?.montoTotal || "€0.00"}</td>{" "}
-                    {/* ✅ Usa montoTotal */}
-                  </tr>
-                ))}
-                {/* Subtotal */}
+              }
+              renderRow={(item, index) => (
+                <tr key={item._id}>
+                  <td>{index + 1}</td>
+                  <td>{new Date(item.fechaPago).toLocaleDateString()}</td>
+                  <td>{item.nombre}</td>
+                  <td>{item.habitacion?.numero || "N/A"}</td>
+                  <td>{item.habitacion?.tipo || "N/A"}</td>
+                  <td>{new Date(item.checkIn).toLocaleDateString()}</td>
+                  <td>{new Date(item.checkOut).toLocaleDateString()}</td>
+                  <td>{item.ingreso?.montoTotal || "€0.00"}</td>
+                </tr>
+              )}
+              subtotalRow={
                 <tr className="bg-light">
                   <td colSpan="7" className="text-end fw-bold">
                     Subtotal:
@@ -160,8 +160,8 @@ const CashEuroData = ({ data }) => {
                     {calculateSubtotal(efectivoEurosAmenidades)}
                   </td>
                 </tr>
-              </tbody>
-            </Table>
+              }
+            />
           </Card>
         </Col>
       </Row>

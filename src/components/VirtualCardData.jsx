@@ -1,5 +1,6 @@
 import React from "react";
-import { Container, Table, Row, Col, Card } from "react-bootstrap";
+import { Container, Row, Col, Card } from "react-bootstrap";
+import PaginatedTable from "./common/PaginatedTable";
 
 const VirtualCardData = ({ data }) => {
   // Filtrar movimientos por Tarjetas Virtuales y concepto
@@ -82,8 +83,10 @@ const VirtualCardData = ({ data }) => {
               <Card.Header className="bg-light text-dark">
                 <h4>{ota}</h4>
               </Card.Header>
-              <Table striped bordered hover className="virtual-card-data-table">
-                <thead>
+              <PaginatedTable
+                className="virtual-card-data-table"
+                items={groupedEstancia[ota]}
+                headerRow={
                   <tr className="bg-primary text-white">
                     <th>No.</th>
                     <th>Fecha de Pago</th>
@@ -95,93 +98,11 @@ const VirtualCardData = ({ data }) => {
                     <th>Autorización</th>
                     <th>Importe</th>
                   </tr>
-                </thead>
-                <tbody>
-                  {groupedEstancia[ota].map((item, index) => (
-                    <>
-                      {/* Primera fila: Datos generales + primera autorización */}
-                      <tr key={`${item._id}-main`}>
-                        <td rowSpan={item.ingreso?.autorizaciones?.length || 1}>
-                          {index + 1}
-                        </td>
-                        <td rowSpan={item.ingreso?.autorizaciones?.length || 1}>
-                          {new Date(item.fechaPago).toLocaleDateString()}
-                        </td>
-                        <td rowSpan={item.ingreso?.autorizaciones?.length || 1}>
-                          {item.nombre}
-                        </td>
-                        <td rowSpan={item.ingreso?.autorizaciones?.length || 1}>
-                          {item.habitacion?.numero || "N/A"}
-                        </td>
-                        <td rowSpan={item.ingreso?.autorizaciones?.length || 1}>
-                          {item.habitacion?.tipo || "N/A"}
-                        </td>
-                        <td rowSpan={item.ingreso?.autorizaciones?.length || 1}>
-                          {new Date(item.checkIn).toLocaleDateString()}
-                        </td>
-                        <td rowSpan={item.ingreso?.autorizaciones?.length || 1}>
-                          {new Date(item.checkOut).toLocaleDateString()}
-                        </td>
-                        <td>
-                          {item.ingreso?.autorizaciones?.[0]?.codigo || "N/A"}
-                        </td>{" "}
-                        {/* ✅ Primera autorización */}
-                        <td>
-                          {item.ingreso?.autorizaciones?.[0]?.monto || "$0,00"}
-                        </td>{" "}
-                        {/* ✅ Primer monto */}
-                      </tr>
-                      {/* Filas adicionales para más autorizaciones */}
-                      {item.ingreso?.autorizaciones
-                        ?.slice(1)
-                        .map((autorizacion, authIndex) => (
-                          <tr key={`${item._id}-auth-${authIndex}`}>
-                            <td>{autorizacion.codigo}</td>
-                            <td>{autorizacion.monto}</td>
-                          </tr>
-                        ))}
-                    </>
-                  ))}
-                  {/* Subtotal */}
-                  <tr className="bg-light">
-                    <td colSpan="8" className="text-end fw-bold">
-                      Subtotal:
-                    </td>
-                    <td className="fw-bold">
-                      {calculateSubtotal(groupedEstancia[ota])}
-                    </td>
-                  </tr>
-                </tbody>
-              </Table>
-            </Card>
-          ))}
-        </Col>
-      </Row>
-
-      {/* Tabla de Amenidades */}
-      <Row>
-        <Col>
-          <h3 className="text-dark">Amenidades</h3>
-          <Card>
-            <Table striped bordered hover>
-              <thead>
-                <tr className="bg-success text-white">
-                  <th>No.</th>
-                  <th>Fecha de Pago</th>
-                  <th>Nombre</th>
-                  <th>Habitación</th>
-                  <th>Tipo de Habitación</th>
-                  <th>Check-In</th>
-                  <th>Check-Out</th>
-                  <th>Autorización</th>
-                  <th>Importe</th>
-                </tr>
-              </thead>
-              <tbody>
-                {tarjetaVirtualAmenidades.map((item, index) => (
-                  <>
+                }
+                renderRow={(item, index) => (
+                  <React.Fragment key={item._id}>
                     {/* Primera fila: Datos generales + primera autorización */}
-                    <tr key={`${item._id}-main`}>
+                    <tr>
                       <td rowSpan={item.ingreso?.autorizaciones?.length || 1}>
                         {index + 1}
                       </td>
@@ -203,12 +124,8 @@ const VirtualCardData = ({ data }) => {
                       <td rowSpan={item.ingreso?.autorizaciones?.length || 1}>
                         {new Date(item.checkOut).toLocaleDateString()}
                       </td>
-                      <td>
-                        {item.ingreso?.autorizaciones?.[0]?.codigo || "N/A"}
-                      </td>
-                      <td>
-                        {item.ingreso?.autorizaciones?.[0]?.monto || "$0.00"}
-                      </td>
+                      <td>{item.ingreso?.autorizaciones?.[0]?.codigo || "N/A"}</td>
+                      <td>{item.ingreso?.autorizaciones?.[0]?.monto || "$0,00"}</td>
                     </tr>
                     {/* Filas adicionales para más autorizaciones */}
                     {item.ingreso?.autorizaciones
@@ -219,9 +136,84 @@ const VirtualCardData = ({ data }) => {
                           <td>{autorizacion.monto}</td>
                         </tr>
                       ))}
-                  </>
-                ))}
-                {/* Subtotal */}
+                  </React.Fragment>
+                )}
+                subtotalRow={
+                  <tr className="bg-light">
+                    <td colSpan="8" className="text-end fw-bold">
+                      Subtotal:
+                    </td>
+                    <td className="fw-bold">
+                      {calculateSubtotal(groupedEstancia[ota])}
+                    </td>
+                  </tr>
+                }
+              />
+            </Card>
+          ))}
+        </Col>
+      </Row>
+
+      {/* Tabla de Amenidades */}
+      <Row>
+        <Col>
+          <h3 className="text-dark">Amenidades</h3>
+          <Card>
+            <PaginatedTable
+              items={tarjetaVirtualAmenidades}
+              headerRow={
+                <tr className="bg-success text-white">
+                  <th>No.</th>
+                  <th>Fecha de Pago</th>
+                  <th>Nombre</th>
+                  <th>Habitación</th>
+                  <th>Tipo de Habitación</th>
+                  <th>Check-In</th>
+                  <th>Check-Out</th>
+                  <th>Autorización</th>
+                  <th>Importe</th>
+                </tr>
+              }
+              renderRow={(item, index) => (
+                <React.Fragment key={item._id}>
+                  {/* Primera fila: Datos generales + primera autorización */}
+                  <tr>
+                    <td rowSpan={item.ingreso?.autorizaciones?.length || 1}>
+                      {index + 1}
+                    </td>
+                    <td rowSpan={item.ingreso?.autorizaciones?.length || 1}>
+                      {new Date(item.fechaPago).toLocaleDateString()}
+                    </td>
+                    <td rowSpan={item.ingreso?.autorizaciones?.length || 1}>
+                      {item.nombre}
+                    </td>
+                    <td rowSpan={item.ingreso?.autorizaciones?.length || 1}>
+                      {item.habitacion?.numero || "N/A"}
+                    </td>
+                    <td rowSpan={item.ingreso?.autorizaciones?.length || 1}>
+                      {item.habitacion?.tipo || "N/A"}
+                    </td>
+                    <td rowSpan={item.ingreso?.autorizaciones?.length || 1}>
+                      {new Date(item.checkIn).toLocaleDateString()}
+                    </td>
+                    <td rowSpan={item.ingreso?.autorizaciones?.length || 1}>
+                      {new Date(item.checkOut).toLocaleDateString()}
+                    </td>
+                    <td>{item.ingreso?.autorizaciones?.[0]?.codigo || "N/A"}</td>
+                    <td>{item.ingreso?.autorizaciones?.[0]?.monto || "$0.00"}</td>
+                  </tr>
+                  {/* Filas adicionales para más autorizaciones */}
+                  {item.ingreso?.autorizaciones
+                    ?.slice(1)
+                    .map((autorizacion, authIndex) => (
+                      <tr key={`${item._id}-auth-${authIndex}`}>
+                        <td>{autorizacion.codigo}</td>
+                        <td>{autorizacion.monto}</td>
+                      </tr>
+                    ))}
+                </React.Fragment>
+              )}
+              subtotalRow={
                 <tr className="bg-light">
                   <td colSpan="8" className="text-end fw-bold">
                     Subtotal:
@@ -230,8 +222,8 @@ const VirtualCardData = ({ data }) => {
                     {calculateSubtotal(tarjetaVirtualAmenidades)}
                   </td>
                 </tr>
-              </tbody>
-            </Table>
+              }
+            />
           </Card>
         </Col>
       </Row>

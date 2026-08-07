@@ -1,14 +1,7 @@
 import React, { useState, useEffect } from "react";
-import {
-  Table,
-  Button,
-  Container,
-  Row,
-  Col,
-  Modal,
-  Form,
-} from "react-bootstrap";
+import { Button, Container, Row, Col } from "react-bootstrap";
 import EditMovementModal from "../components/EditMovementModal";
+import PaginatedTable from "../components/common/PaginatedTable";
 import axios from "axios";
 
 const Movements = () => {
@@ -176,9 +169,11 @@ const Movements = () => {
       </Row>
       <Row>
         <Col>
-          <Table striped bordered hover responsive>
-            <thead className="bg-dark text-white">
-              <tr>
+          <PaginatedTable
+            responsive
+            items={Array.isArray(movements) ? movements : []}
+            headerRow={
+              <tr className="bg-dark text-white">
                 <th>Nombre</th>
                 <th>Habitación</th>
                 <th>Tipo de Habitación</th>
@@ -189,54 +184,50 @@ const Movements = () => {
                 <th>Importe</th>
                 <th>Acciones</th>
               </tr>
-            </thead>
-            <tbody>
-              {Array.isArray(movements) &&
-                movements.map((movement) => (
-                  <tr key={movement._id}>
-                    <td>{movement.nombre}</td>
-                    <td>{movement.habitacion?.numero || "N/A"}</td>
-                    <td>{movement.habitacion?.tipo || "N/A"}</td>
-                    <td>
-                      {movement.checkIn
-                        ? new Date(movement.checkIn).toLocaleDateString()
-                        : "N/A"}
-                    </td>
-                    <td>
-                      {movement.checkOut
-                        ? new Date(movement.checkOut).toLocaleDateString()
-                        : "N/A"}
-                    </td>
-                    <td>{movement.concepto || "N/A"}</td>
-                    <td>{movement.ota || "N/A"}</td>
-                    <td>
-                      {movement.ingreso?.montoTotal?.toLocaleString("es-MX", {
-                        style: "currency",
-                        currency: "MXN",
-                      }) || "$0.00"}
-                    </td>
-                    {/* ✅ Ahora accede a `montoTotal` */}
-                    <td>
-                      <Button
-                        variant="warning"
-                        size="sm"
-                        className="me-2"
-                        onClick={() => handleEdit(movement)}
-                      >
-                        Editar
-                      </Button>
-                      <Button
-                        variant="danger"
-                        size="sm"
-                        onClick={() => handleDelete(movement._id)}
-                      >
-                        Eliminar
-                      </Button>
-                    </td>
-                  </tr>
-                ))}
-            </tbody>
-          </Table>
+            }
+            renderRow={(movement) => (
+              <tr key={movement._id}>
+                <td>{movement.nombre}</td>
+                <td>{movement.habitacion?.numero || "N/A"}</td>
+                <td>{movement.habitacion?.tipo || "N/A"}</td>
+                <td>
+                  {movement.checkIn
+                    ? new Date(movement.checkIn).toLocaleDateString()
+                    : "N/A"}
+                </td>
+                <td>
+                  {movement.checkOut
+                    ? new Date(movement.checkOut).toLocaleDateString()
+                    : "N/A"}
+                </td>
+                <td>{movement.concepto || "N/A"}</td>
+                <td>{movement.ota || "N/A"}</td>
+                <td>
+                  {movement.ingreso?.montoTotal?.toLocaleString("es-MX", {
+                    style: "currency",
+                    currency: "MXN",
+                  }) || "$0.00"}
+                </td>
+                <td>
+                  <Button
+                    variant="warning"
+                    size="sm"
+                    className="me-2"
+                    onClick={() => handleEdit(movement)}
+                  >
+                    Editar
+                  </Button>
+                  <Button
+                    variant="danger"
+                    size="sm"
+                    onClick={() => handleDelete(movement._id)}
+                  >
+                    Eliminar
+                  </Button>
+                </td>
+              </tr>
+            )}
+          />
         </Col>
       </Row>
 
