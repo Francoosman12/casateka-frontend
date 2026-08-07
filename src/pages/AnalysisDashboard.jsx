@@ -1,10 +1,9 @@
-import React, { useEffect, useState } from "react";
-import { Container, Card, ProgressBar, Form, Button } from "react-bootstrap";
-import { Bar, Pie, Line } from "react-chartjs-2";
+import React, { useEffect, useMemo, useState } from "react";
+import { Container, Card, Form, Button, Row, Col } from "react-bootstrap";
+import { Bar, Line } from "react-chartjs-2";
 import apiClient from "../api/client";
 import {
   Chart as ChartJS,
-  ArcElement,
   Tooltip,
   Legend,
   CategoryScale,
@@ -12,18 +11,92 @@ import {
   BarElement,
   PointElement,
   LineElement,
+  Filler,
 } from "chart.js";
 
-// ✅ Registrar los elementos de Chart.js
 ChartJS.register(
-  ArcElement,
   Tooltip,
   Legend,
   CategoryScale,
   LinearScale,
   BarElement,
   PointElement,
-  LineElement
+  LineElement,
+  Filler
+);
+
+// Paleta de la referencia de data-viz (validada contra CVD): un color fijo
+// por gráfico, nunca uno distinto por barra dentro de un mismo gráfico.
+const COLOR = {
+  blue: "#2a78d6",
+  aqua: "#1baf7a",
+  orange: "#eb6834",
+  violet: "#4a3aa7",
+  gridline: "#e1e0d9",
+  axis: "#898781",
+  ink: "#0b0b0b",
+  inkSecondary: "#52514e",
+  surface: "#fcfcfb",
+};
+
+const hexToRgba = (hex, alpha) => {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+};
+
+// El campo montoTotal se guarda como string y a veces trae separador de
+// miles; se limpia igual que en el resto de la app (Cash/Card/TransferData).
+const parseMonto = (raw) => Number(String(raw ?? "0").replace(/,/g, "")) || 0;
+
+const formatCurrency = (value, maximumFractionDigits = 2) =>
+  value.toLocaleString("es-MX", {
+    style: "currency",
+    currency: "MXN",
+    maximumFractionDigits,
+  });
+
+const gridOptions = {
+  color: COLOR.gridline,
+  drawTicks: false,
+};
+
+const tickOptions = {
+  color: COLOR.axis,
+  font: { size: 12 },
+};
+
+const currencyTooltip = {
+  callbacks: {
+    label: (ctx) => formatCurrency(ctx.parsed.y ?? ctx.parsed, 0),
+  },
+};
+
+const StatTile = ({ label, value, accent }) => (
+  <Col xs={12} sm={6} lg={3}>
+    <Card className="h-100 shadow-sm border-0 stat-tile" style={{ borderTop: `3px solid ${accent}` }}>
+      <Card.Body>
+        <div className="text-uppercase small fw-semibold" style={{ color: COLOR.inkSecondary, letterSpacing: "0.04em" }}>
+          {label}
+        </div>
+        <div className="mt-1" style={{ fontSize: "1.75rem", fontWeight: 700, color: COLOR.ink }}>
+          {value}
+        </div>
+      </Card.Body>
+    </Card>
+  </Col>
+);
+
+const ChartCard = ({ title, children, lg = 4 }) => (
+  <Col xs={12} lg={lg}>
+    <Card className="h-100 shadow-sm border-0">
+      <Card.Body>
+        <Card.Title as="h6" className="mb-3" style={{ color: COLOR.ink }}>
+          {title}
+        </Card.Title>
+        <div style={{ height: "260px" }}>{children}</div>
+      </Card.Body>
+    </Card>
+  </Col>
 );
 
 const AnalysisDashboard = () => {
@@ -37,16 +110,15 @@ const AnalysisDashboard = () => {
       try {
         const response = await apiClient.get("/api/movements");
         setData(response.data);
-        setFilteredData(response.data); // ✅ Inicialmente, los datos no están filtrados
+        setFilteredData(response.data);
       } catch (error) {
-        console.error("🚨 Error al obtener los movimientos:", error.message);
+        console.error("Error al obtener los movimientos:", error.message);
       }
     };
 
     fetchMovements();
   }, []);
 
-  // ✅ Función para filtrar el dashboard por período
   const handleFilter = () => {
     if (!startDate || !endDate) {
       alert("Por favor selecciona un rango de fechas válido.");
@@ -66,206 +138,225 @@ const AnalysisDashboard = () => {
     setFilteredData(filtered);
   };
 
-  // ✅ Procesar datos para gráficos con datos filtrados
-  const paymentTypes = filteredData.reduce((acc, item) => {
-    const tipo = item.ingreso?.subtipo || "Desconocido";
-    acc[tipo] = (acc[tipo] || 0) + parseFloat(item.ingreso?.montoTotal || 0);
-    return acc;
-  }, {});
+  const handleReset = () => {
+    setStartDate("");
+    setEndDate("");
+    setFilteredData(data);
+  };
 
-  const paymentLabels = Object.keys(paymentTypes);
-  const paymentValues = Object.values(paymentTypes);
+  const {
+    totalIngresos,
+    totalNoches,
+    promedioPorNoche,
+    mostUsedRoom,
+    barChartData,
+    otaChartData,
+    roomChartData,
+    lineChartData,
+  } = useMemo(() => {
+    const totalIngresos = filteredData.reduce(
+      (sum, item) => sum + parseMonto(item.ingreso?.montoTotal),
+      0
+    );
 
-  const barChartData = {
-    labels: paymentLabels,
-    datasets: [
-      {
-        label: "Ingresos por Tipo de Pago",
-        data: paymentValues.length > 0 ? paymentValues : [0],
-        backgroundColor: [
-          "#007bff",
-          "#28a745",
-          "#ffc107",
-          "#dc3545",
-          "#6f42c1",
+    const totalNoches = filteredData.reduce(
+      (sum, item) => sum + (item.noches || 0),
+      0
+    );
+
+    const promedioPorNoche = totalNoches > 0 ? totalIngresos / totalNoches : 0;
+
+    // Ingresos por tipo de pago (subtipo)
+    const paymentTotals = filteredData.reduce((acc, item) => {
+      const tipo = item.ingreso?.subtipo || "Desconocido";
+      acc[tipo] = (acc[tipo] || 0) + parseMonto(item.ingreso?.montoTotal);
+      return acc;
+    }, {});
+
+    // Ingresos por OTA
+    const otaTotals = filteredData.reduce((acc, item) => {
+      const ota = item.ota || "Sin OTA";
+      acc[ota] = (acc[ota] || 0) + parseMonto(item.ingreso?.montoTotal);
+      return acc;
+    }, {});
+
+    // Ingresos y ocupación por tipo de habitación
+    const roomTotals = {};
+    const roomCounts = {};
+    filteredData.forEach((item) => {
+      const room = item.habitacion?.tipo || "Desconocido";
+      roomTotals[room] = (roomTotals[room] || 0) + parseMonto(item.ingreso?.montoTotal);
+      roomCounts[room] = (roomCounts[room] || 0) + 1;
+    });
+
+    const mostUsedRoom =
+      Object.keys(roomCounts).length > 0
+        ? Object.keys(roomCounts).reduce((a, b) => (roomCounts[a] > roomCounts[b] ? a : b))
+        : "Sin datos";
+
+    // Flujo diario, ordenado cronológicamente (la API devuelve los
+    // movimientos más recientes primero, no sirve para graficar tal cual)
+    const dailyTotals = filteredData.reduce((acc, item) => {
+      const date = new Date(item.fechaPago).toISOString().split("T")[0];
+      acc[date] = (acc[date] || 0) + parseMonto(item.ingreso?.montoTotal);
+      return acc;
+    }, {});
+    const sortedDays = Object.keys(dailyTotals).sort();
+
+    const makeBarData = (totals, color) => {
+      const labels = Object.keys(totals);
+      return {
+        labels,
+        datasets: [
+          {
+            data: labels.map((label) => totals[label]),
+            backgroundColor: color,
+            borderRadius: 4,
+            borderSkipped: "bottom",
+            maxBarThickness: 40,
+          },
+        ],
+      };
+    };
+
+    return {
+      totalIngresos,
+      totalNoches,
+      promedioPorNoche,
+      mostUsedRoom,
+      barChartData: makeBarData(paymentTotals, COLOR.aqua),
+      otaChartData: makeBarData(otaTotals, COLOR.orange),
+      roomChartData: makeBarData(roomTotals, COLOR.violet),
+      lineChartData: {
+        labels: sortedDays.map((d) =>
+          new Date(d).toLocaleDateString("es-MX", { day: "2-digit", month: "2-digit" })
+        ),
+        datasets: [
+          {
+            data: sortedDays.map((d) => dailyTotals[d]),
+            borderColor: COLOR.blue,
+            backgroundColor: hexToRgba(COLOR.blue, 0.1),
+            fill: true,
+            tension: 0.3,
+            borderWidth: 2,
+            pointRadius: 3,
+            pointHoverRadius: 6,
+            pointBackgroundColor: COLOR.blue,
+            pointBorderColor: COLOR.surface,
+            pointBorderWidth: 2,
+          },
         ],
       },
-    ],
-  };
+    };
+  }, [filteredData]);
 
-  const pieChartData = {
-    labels: paymentLabels,
-    datasets: [
-      {
-        data: paymentValues.length > 0 ? paymentValues : [0],
-        backgroundColor: [
-          "#007bff",
-          "#28a745",
-          "#ffc107",
-          "#dc3545",
-          "#6f42c1",
-        ],
+  const barOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: { ...currencyTooltip, intersect: false, mode: "nearest" },
+    },
+    scales: {
+      x: { grid: { display: false }, ticks: tickOptions },
+      y: {
+        beginAtZero: true,
+        grid: gridOptions,
+        border: { display: false },
+        ticks: { ...tickOptions, callback: (v) => formatCurrency(v, 0) },
       },
-    ],
+    },
   };
 
-  // ✅ Flujo de pagos por día
-  const dailyFlow = filteredData.reduce((acc, item) => {
-    const date = new Date(item.fechaPago).toISOString().split("T")[0];
-    acc[date] = (acc[date] || 0) + parseFloat(item.ingreso?.montoTotal || 0);
-    return acc;
-  }, {});
-
-  const dailyLabels = Object.keys(dailyFlow);
-  const dailyValues = Object.values(dailyFlow);
-
-  const lineChartData = {
-    labels: dailyLabels.length > 0 ? dailyLabels : ["Sin datos"],
-    datasets: [
-      {
-        label: "Flujo de Pagos por Día",
-        data: dailyValues.length > 0 ? dailyValues : [0],
-        borderColor: "#007bff",
-        backgroundColor: "rgba(0, 123, 255, 0.5)",
-        fill: true,
+  const lineOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    interaction: { mode: "index", intersect: false },
+    plugins: {
+      legend: { display: false },
+      tooltip: currencyTooltip,
+    },
+    scales: {
+      x: { grid: { display: false }, ticks: tickOptions },
+      y: {
+        beginAtZero: true,
+        grid: gridOptions,
+        border: { display: false },
+        ticks: { ...tickOptions, callback: (v) => formatCurrency(v, 0) },
       },
-    ],
+    },
   };
-
-  // ✅ Habitación más ocupada
-  const roomUsage = filteredData.reduce((acc, item) => {
-    const room = item.habitacion?.tipo || "Desconocido";
-    acc[room] = (acc[room] || 0) + 1;
-    return acc;
-  }, {});
-
-  const mostUsedRoom =
-    Object.keys(roomUsage).length > 0
-      ? Object.keys(roomUsage).reduce((a, b) =>
-          roomUsage[a] > roomUsage[b] ? a : b
-        )
-      : "Sin datos";
-
-  const totalIngresos =
-    paymentValues.length > 0
-      ? paymentValues.reduce((a, b) => a + b, 0).toFixed(2)
-      : "0.00";
-
-  // ✅ Calcular el promedio de ingresos por noche
-  const totalNoches = filteredData.reduce(
-    (acc, item) => acc + (item.noches || 0),
-    0
-  );
-  const totalIngresosNumerico =
-    paymentValues.length > 0 ? paymentValues.reduce((a, b) => a + b, 0) : 0;
-  const promedioPorNoche =
-    totalNoches > 0 ? (totalIngresosNumerico / totalNoches).toFixed(2) : "0.00";
 
   return (
-    <Container
-      fluid
-      className="vh-100 w-100 d-grid p-5"
-      style={{
-        display: "grid",
-        gridTemplateAreas: `
-      "search search search"
-      "stats1 stats2 stats3"
-      "chart1 chart2 chart3"
-      "chart4 chart5 chart6"
-    `,
-        gridTemplateColumns: "repeat(3, 1fr)",
-        gridTemplateRows: "auto auto auto auto",
-        gap: "2px",
-      }}
-    >
-      {/* ✅ Estilos responsive */}
-      <style>
-        {`
-      @media (max-width: 768px) {
-        .d-grid {
-          display: block;
-        }
+    <Container className="mt-4 mb-5">
+      <h2 className="mb-1">Dashboard de Análisis</h2>
+      <p className="text-muted mb-4">
+        Visión general de los ingresos del hotel para el período seleccionado.
+      </p>
 
-        .search-bar,
-        .shadow-sm {
-          width: 100%;
-          margin-bottom: 15px;
-        }
-      }
-    `}
-      </style>
-
-      {/* ✅ Filtro de período */}
-      <div className="search-bar" style={{ gridArea: "search" }}>
-        <Form className="d-flex flex-wrap justify-content-center align-items-center gap-3">
-          <Form.Group>
-            <Form.Label>Desde:</Form.Label>
-            <Form.Control
-              type="date"
-              onChange={(e) => setStartDate(e.target.value)}
-            />
-          </Form.Group>
-          <Form.Group>
-            <Form.Label>Hasta:</Form.Label>
-            <Form.Control
-              type="date"
-              onChange={(e) => setEndDate(e.target.value)}
-            />
-          </Form.Group>
-          <Button variant="primary" onClick={handleFilter}>
-            Filtrar
-          </Button>
-        </Form>
-      </div>
-
-      {/* ✅ Indicadores clave */}
-      <Card className="shadow-sm text-center" style={{ gridArea: "stats1" }}>
+      <Card className="mb-4 shadow-sm border-0">
         <Card.Body>
-          <Card.Title>Ingresos Totales</Card.Title>
-          <h3>${totalIngresos}</h3>
+          <Form>
+            <Row className="g-3 align-items-end">
+              <Col xs={12} sm={4} md={3}>
+                <Form.Group>
+                  <Form.Label className="fw-bold">Desde</Form.Label>
+                  <Form.Control
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                  />
+                </Form.Group>
+              </Col>
+              <Col xs={12} sm={4} md={3}>
+                <Form.Group>
+                  <Form.Label className="fw-bold">Hasta</Form.Label>
+                  <Form.Control
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                  />
+                </Form.Group>
+              </Col>
+              <Col xs="auto">
+                <Button variant="primary" onClick={handleFilter}>
+                  Filtrar
+                </Button>
+              </Col>
+              <Col xs="auto">
+                <Button variant="outline-secondary" onClick={handleReset}>
+                  Ver todo
+                </Button>
+              </Col>
+            </Row>
+          </Form>
         </Card.Body>
       </Card>
 
-      <Card className="shadow-sm text-center" style={{ gridArea: "stats2" }}>
-        <Card.Body>
-          <Card.Title>Habitación Más Ocupada</Card.Title>
-          <h3>{mostUsedRoom}</h3>
-        </Card.Body>
-      </Card>
-      <Card className="shadow-sm text-center" style={{ gridArea: "stats3" }}>
-        <Card.Body>
-          <Card.Title>Promedio de Ingresos por Noche</Card.Title>
-          <h3>${promedioPorNoche}</h3>
-        </Card.Body>
-      </Card>
+      <Row className="g-3 mb-3">
+        <StatTile label="Ingresos totales" value={formatCurrency(totalIngresos)} accent={COLOR.blue} />
+        <StatTile label="Noches vendidas" value={totalNoches.toLocaleString("es-MX")} accent={COLOR.aqua} />
+        <StatTile label="Tarifa promedio / noche" value={formatCurrency(promedioPorNoche)} accent={COLOR.orange} />
+        <StatTile label="Habitación más solicitada" value={mostUsedRoom} accent={COLOR.violet} />
+      </Row>
 
-      {/* ✅ Gráficos */}
-      <Card className="shadow-sm" style={{ gridArea: "chart1" }}>
-        <Card.Body>
-          <Card.Title className="text-center">
-            Ingresos por Tipo de Pago
-          </Card.Title>
-          <Bar data={barChartData} />
-        </Card.Body>
-      </Card>
+      <Row className="g-3 mb-3">
+        <ChartCard title="Flujo de ingresos por día" lg={12}>
+          <Line data={lineChartData} options={lineOptions} />
+        </ChartCard>
+      </Row>
 
-      <Card className="shadow-sm" style={{ gridArea: "chart2" }}>
-        <Card.Body>
-          <Card.Title className="text-center">
-            Distribución de Ingresos
-          </Card.Title>
-          <Pie data={pieChartData} />
-        </Card.Body>
-      </Card>
-
-      <Card className="shadow-sm" style={{ gridArea: "chart3" }}>
-        <Card.Body>
-          <Card.Title className="text-center">
-            Flujo de Pagos por Día
-          </Card.Title>
-          <Line data={lineChartData} />
-        </Card.Body>
-      </Card>
+      <Row className="g-3">
+        <ChartCard title="Ingresos por tipo de pago">
+          <Bar data={barChartData} options={barOptions} />
+        </ChartCard>
+        <ChartCard title="Ingresos por OTA">
+          <Bar data={otaChartData} options={barOptions} />
+        </ChartCard>
+        <ChartCard title="Ingresos por tipo de habitación">
+          <Bar data={roomChartData} options={barOptions} />
+        </ChartCard>
+      </Row>
     </Container>
   );
 };
