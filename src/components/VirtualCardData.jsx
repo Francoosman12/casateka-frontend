@@ -2,7 +2,7 @@ import React from "react";
 import { Container, Row, Col, Card } from "react-bootstrap";
 import PaginatedTable from "./common/PaginatedTable";
 
-const VirtualCardData = ({ data }) => {
+const VirtualCardData = ({ data = [] }) => {
   // Filtrar movimientos por Tarjetas Virtuales y concepto
   const tarjetaVirtualEstancia = data.filter(
     (item) =>

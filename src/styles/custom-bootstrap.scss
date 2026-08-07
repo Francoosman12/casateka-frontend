@@ -1,0 +1,19 @@
+// Paleta Casa Teka: acompaña el isotipo (hoja de manglar) en blanco y negro,
+// reemplazando el azul por defecto de Bootstrap por tonos tierra/verde bosque.
+$primary: #3f5c4a;
+$secondary: #8a7f6d;
+$dark: #1e1e1a;
+$light: #f7f5f1;
+$body-bg: #f7f5f1;
+$body-color: #2a2a26;
+
+$border-radius: 0.5rem;
+$border-radius-sm: 0.375rem;
+$border-radius-lg: 0.75rem;
+
+$card-border-width: 0;
+$card-box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+
+$link-decoration: none;
+
+@import "bootstrap/scss/bootstrap";

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Container, Form, Button } from "react-bootstrap";
+import { Container, Form, Button, Card, Row, Col } from "react-bootstrap";
 import { exportToExcel } from "../utils/excelUtils";
 import { generatePDFReport } from "../utils/pdfUtils";
 import ReportTable from "../components/ReportTable";
@@ -71,51 +71,61 @@ const ReportsPage = () => {
   };
 
   return (
-    <Container>
-      <h2 className="mt-4">Generación de Reportes</h2>
-      <Form>
-        <Form.Group>
-          <Form.Label>Fecha de Inicio:</Form.Label>
-          <Form.Control
-            type="date"
-            onChange={(e) => setStartDate(e.target.value)}
-          />
-        </Form.Group>
+    <Container className="mt-4 mb-5">
+      <h2 className="mb-1">Generación de Reportes</h2>
+      <p className="text-muted mb-4">
+        Elegí un rango de fechas y exportá el detalle en PDF o Excel.
+      </p>
 
-        <Form.Group>
-          <Form.Label>Fecha Final:</Form.Label>
-          <Form.Control
-            type="date"
-            onChange={(e) => setEndDate(e.target.value)}
-          />
-        </Form.Group>
+      <Card className="mb-4 shadow-sm">
+        <Card.Body>
+          <Form>
+            <Row className="g-3 align-items-end">
+              <Col xs={12} md={4}>
+                <Form.Group>
+                  <Form.Label className="fw-bold">Fecha de Inicio</Form.Label>
+                  <Form.Control
+                    type="date"
+                    onChange={(e) => setStartDate(e.target.value)}
+                  />
+                </Form.Group>
+              </Col>
 
-        <Form.Group>
-          <Form.Label>Formato del Reporte:</Form.Label>
-          <Form.Select onChange={(e) => setReportType(e.target.value)}>
-            <option value="pdf">PDF</option>
-            <option value="excel">Excel</option>
-          </Form.Select>
-        </Form.Group>
+              <Col xs={12} md={4}>
+                <Form.Group>
+                  <Form.Label className="fw-bold">Fecha Final</Form.Label>
+                  <Form.Control
+                    type="date"
+                    onChange={(e) => setEndDate(e.target.value)}
+                  />
+                </Form.Group>
+              </Col>
 
-        <Button
-          className="mt-3"
-          variant="secondary"
-          onClick={handleFilterReport}
-        >
-          Filtrar Reporte
-        </Button>
+              <Col xs={12} md={4}>
+                <Form.Group>
+                  <Form.Label className="fw-bold">
+                    Formato del Reporte
+                  </Form.Label>
+                  <Form.Select onChange={(e) => setReportType(e.target.value)}>
+                    <option value="pdf">PDF</option>
+                    <option value="excel">Excel</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+            </Row>
 
-        <Button
-          className="mt-3 ms-2"
-          variant="primary"
-          onClick={handleGenerateReport}
-        >
-          Generar Reporte
-        </Button>
-      </Form>
+            <div className="mt-4 d-flex gap-2">
+              <Button variant="secondary" onClick={handleFilterReport}>
+                Filtrar Reporte
+              </Button>
+              <Button variant="primary" onClick={handleGenerateReport}>
+                Generar Reporte
+              </Button>
+            </div>
+          </Form>
+        </Card.Body>
+      </Card>
 
-      {/* ✅ Usar `ReportTable.jsx` con datos filtrados */}
       <div className="report-container">
         <ReportTable data={filteredData} />
       </div>

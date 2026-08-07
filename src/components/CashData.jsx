@@ -2,7 +2,7 @@ import React from "react";
 import { Container, Row, Col, Card } from "react-bootstrap";
 import PaginatedTable from "./common/PaginatedTable";
 
-const CashData = ({ data }) => {
+const CashData = ({ data = [] }) => {
   // Filtrar los datos por concepto (Estancia y Amenidades) para efectivo en pesos
   const efectivoPesosEstancia = data.filter(
     (item) =>

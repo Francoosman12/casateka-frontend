@@ -1,6 +1,6 @@
 import React from "react";
 import { Navbar, Nav, Container, Button } from "react-bootstrap";
-import { useNavigate } from "react-router-dom";
+import { Link, NavLink, useNavigate } from "react-router-dom";
 import logo from "../assets/logocasateka.png"; // Ruta al archivo del logo
 import { useAuth } from "../context/AuthContext";
 
@@ -17,7 +17,7 @@ const NavbarComponent = () => {
     <Navbar bg="dark" variant="dark" expand="lg" sticky="top" collapseOnSelect>
       <Container>
         {/* Branding con logo */}
-        <Navbar.Brand href="/">
+        <Navbar.Brand as={Link} to="/">
           <img
             src={logo} // Imagen del logo
             alt="Casa Teka Logo"
@@ -32,15 +32,25 @@ const NavbarComponent = () => {
         <Navbar.Collapse id="responsive-navbar-nav">
           {user && (
             <Nav className="me-auto">
-              <Nav.Link href="/">Crear Movimiento</Nav.Link>
-              <Nav.Link href="/general-dashboard">Tabla General</Nav.Link>
-              <Nav.Link href="/movements">Movimientos</Nav.Link>
-              <Nav.Link href="/reports">Reportes</Nav.Link>
-              <Nav.Link href="/dashboard-analisis">
+              <Nav.Link as={NavLink} to="/" end>
+                Crear Movimiento
+              </Nav.Link>
+              <Nav.Link as={NavLink} to="/general-dashboard">
+                Tabla General
+              </Nav.Link>
+              <Nav.Link as={NavLink} to="/movements">
+                Movimientos
+              </Nav.Link>
+              <Nav.Link as={NavLink} to="/reports">
+                Reportes
+              </Nav.Link>
+              <Nav.Link as={NavLink} to="/dashboard-analisis">
                 Dashboard de Análisis
               </Nav.Link>
               {user.role === "admin" && (
-                <Nav.Link href="/users">Usuarios</Nav.Link>
+                <Nav.Link as={NavLink} to="/users">
+                  Usuarios
+                </Nav.Link>
               )}
             </Nav>
           )}

@@ -1,0 +1,7 @@
+/* react-datepicker envuelve su input en un div inline-block por defecto,
+   lo que hace que quede pegado al lado de la etiqueta en vez de debajo,
+   a diferencia del resto de los campos del formulario (Bootstrap). */
+.react-datepicker-wrapper {
+  display: block;
+  width: 100%;
+}

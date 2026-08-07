@@ -152,11 +152,11 @@ const Movements = () => {
   };
 
   return (
-    <Container className="mt-5">
+    <Container className="mt-4 mb-5">
       <Row className="mb-4">
         <Col>
-          <h1 className="text-center">Movimientos</h1>
-          <p className="text-center text-muted">
+          <h2 className="mb-1">Movimientos</h2>
+          <p className="text-muted mb-0">
             Listado de todos los movimientos registrados.
           </p>
         </Col>

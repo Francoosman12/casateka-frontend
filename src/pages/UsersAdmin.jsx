@@ -58,8 +58,11 @@ const UsersAdmin = () => {
   };
 
   return (
-    <Container className="mt-5 mb-5">
-      <h1 className="text-center mb-4">Usuarios</h1>
+    <Container className="mt-4 mb-5">
+      <h2 className="mb-1">Usuarios</h2>
+      <p className="text-muted mb-4">
+        Creá cuentas de acceso para el equipo y gestioná quién puede entrar.
+      </p>
 
       <Row className="justify-content-center mb-5">
         <Col xs={12} md={6}>

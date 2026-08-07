@@ -2,7 +2,7 @@ import React from "react";
 import { Container, Row, Col, Card } from "react-bootstrap";
 import PaginatedTable from "./common/PaginatedTable";
 
-const CardData = ({ data }) => {
+const CardData = ({ data = [] }) => {
   // Filtrar por tarjeta de crédito/débito (concepto: Estancia y Amenidades)
   const tarjetaCreditoDebitoEstancia = data.filter(
     (item) =>

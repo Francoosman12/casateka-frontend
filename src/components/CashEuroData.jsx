@@ -2,7 +2,7 @@ import React from "react";
 import { Container, Row, Col, Card } from "react-bootstrap";
 import PaginatedTable from "./common/PaginatedTable";
 
-const CashEuroData = ({ data }) => {
+const CashEuroData = ({ data = [] }) => {
   // Filtrar movimientos en efectivo en euros por concepto de estancia y amenidades
   const efectivoEurosEstancia = data.filter(
     (item) =>

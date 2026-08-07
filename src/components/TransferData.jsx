@@ -2,7 +2,7 @@ import React from "react";
 import { Container, Row, Col, Card } from "react-bootstrap";
 import PaginatedTable from "./common/PaginatedTable";
 
-const TransferData = ({ data }) => {
+const TransferData = ({ data = [] }) => {
   // Filtrar los datos relacionados con transferencias por concepto
   const transferenciasEstancia = data.filter(
     (item) =>
