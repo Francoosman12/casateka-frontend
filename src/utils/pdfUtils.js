@@ -2,6 +2,16 @@ import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 import logo from "../assets/logocasateka.png";
 
+// Se dispara vía `didDrawPage` en cada autoTable, así queda en TODAS las
+// páginas que la tabla ocupe, incluidas las que crea la propia librería al
+// paginar internamente una tabla larga (antes esas páginas quedaban sin número).
+const printPageNumber = (pdf) => {
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    pdf.setFontSize(9);
+    pdf.setTextColor(120, 120, 120);
+    pdf.text(String(pdf.getNumberOfPages()), pageWidth - 15, 290);
+};
+
 export const generatePDFReport = async (data, startDate, endDate) => {
     if (!startDate || !endDate) {
         alert("Error: Las fechas de inicio y fin no están definidas.");
@@ -13,10 +23,6 @@ export const generatePDFReport = async (data, startDate, endDate) => {
     const formattedDate = currentDate.toISOString().slice(0, 10);
     const formattedTime = currentDate.toTimeString().slice(0, 5).replace(":", "-");
     const fileName = `Reporte_Movimientos_${formattedDate}_${formattedTime}.pdf`;
-
-  
-    let pageNumber = 1;
-  
 
     const formattedStartDate = new Date(startDate);
 formattedStartDate.setDate(formattedStartDate.getDate() + 1); // ✅ Ajuste para corregir el día perdido
@@ -147,8 +153,7 @@ const monthYear = formattedEndDate.toLocaleDateString("es-MX", options); // ✅ 
         return;
     }
 
-    pdf.addPage();
-    pageNumber = 2; // la portada (página 1) no lleva numeración
+    pdf.addPage(); // la portada (página 1) no lleva numeración
 
     // 🔹 Agregar la tabla de totales antes del desglose detallado
     let startY = 20; // ✅ Definir la posición inicial para las tablas
@@ -165,7 +170,8 @@ const monthYear = formattedEndDate.toLocaleDateString("es-MX", options); // ✅ 
         theme: "grid",
         styles: { fontSize: 10, cellPadding: 3 },
         columnStyles: { 1: { halign: "right", fontStyle: "bold" } },
-        headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] } // 🔹 Fondo negro y texto blanco
+        headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] }, // 🔹 Fondo negro y texto blanco
+        didDrawPage: () => printPageNumber(pdf),
     });
     
     startY = pdf.lastAutoTable.finalY + 10; // ✅ Espaciado entre tablas
@@ -182,7 +188,8 @@ const monthYear = formattedEndDate.toLocaleDateString("es-MX", options); // ✅ 
         theme: "grid",
         styles: { fontSize: 10, cellPadding: 3 },
         columnStyles: { 1: { halign: "right", fontStyle: "bold" } },
-        headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] } 
+        headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] },
+        didDrawPage: () => printPageNumber(pdf),
     });
     
     startY = pdf.lastAutoTable.finalY + 10;
@@ -198,7 +205,8 @@ const monthYear = formattedEndDate.toLocaleDateString("es-MX", options); // ✅ 
         theme: "grid",
         styles: { fontSize: 10, cellPadding: 3 },
         columnStyles: { 1: { halign: "right", fontStyle: "bold" } },
-        headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] } 
+        headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] },
+        didDrawPage: () => printPageNumber(pdf),
     });
     
     startY = pdf.lastAutoTable.finalY + 10;
@@ -215,7 +223,8 @@ const monthYear = formattedEndDate.toLocaleDateString("es-MX", options); // ✅ 
         theme: "grid",
         styles: { fontSize: 10, cellPadding: 3 },
         columnStyles: { 1: { halign: "right", fontStyle: "bold" } },
-        headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] } 
+        headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] },
+        didDrawPage: () => printPageNumber(pdf),
     });
     
     startY = pdf.lastAutoTable.finalY + 10;
@@ -232,15 +241,12 @@ const monthYear = formattedEndDate.toLocaleDateString("es-MX", options); // ✅ 
         theme: "grid",
         styles: { fontSize: 10, cellPadding: 3 },
         columnStyles: { 1: { halign: "right", fontStyle: "bold" } },
-        headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] } 
+        headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] },
+        didDrawPage: () => printPageNumber(pdf),
     });
 
-    // ✅ Agregar número de página
-    pdf.setFontSize(10);
-    pdf.text(`${pageNumber}`, 185, 290);
     pdf.addPage();
-    pageNumber++;
-    startY = 30;  
+    startY = 30;
 
     // 🔹 Agrupar por Subtipo → Concepto → OTA
     const groupedBySubtipo = data.reduce((acc, item) => {
@@ -260,22 +266,12 @@ const monthYear = formattedEndDate.toLocaleDateString("es-MX", options); // ✅ 
     startY=15;
     
     Object.keys(groupedBySubtipo).forEach((subtipo) => {
-        // ✅ Imprimir número de página ANTES de verificar si se necesita una nueva página
-        pageNumber = pdf.getNumberOfPages();
-        pdf.setFontSize(10);
-        pdf.text(`${pageNumber}`, 185, 290);
-    
-        // ✅ Si `startY` supera el límite, agregar nueva página y actualizar número
+        // ✅ Si `startY` supera el límite, agregar nueva página antes del título
         if (startY > 250) {
             pdf.addPage();
-            pageNumber++; // ✅ Incrementar página correctamente
             startY = 10; // ✅ Reiniciar margen en nueva página
-    
-            // ✅ Asegurar que la numeración aparece en TODAS las páginas después de la nueva página
-            pdf.setFontSize(10);
-            pdf.text(`${pageNumber}`, 185, 290);
         }
-    
+
         pdf.setFontSize(12);
         pdf.text(subtipo.toUpperCase(), 10, startY);
         pdf.setLineWidth(0.2);
@@ -313,20 +309,30 @@ const monthYear = formattedEndDate.toLocaleDateString("es-MX", options); // ✅ 
                     styles: { fontSize: 8, cellPadding: 2 },
                     headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] },
                     bodyStyles: rowStyles,
-                    alternateRowStyles: { fillColor: [240, 240, 240] } // ✅ Alternar filas como en Bootstrap
+                    alternateRowStyles: { fillColor: [240, 240, 240] }, // ✅ Alternar filas como en Bootstrap
+                    didDrawPage: (hookData) => {
+                        printPageNumber(pdf);
+                        // Si la propia tabla se partió en varias páginas, la
+                        // continuación pierde de vista a qué sección pertenece;
+                        // se repite un renglón de contexto arriba de cada una.
+                        if (hookData.pageNumber > 1) {
+                            pdf.setFontSize(9);
+                            pdf.setTextColor(140, 140, 140);
+                            pdf.text(
+                                `${subtipo.toUpperCase()} · ${concepto} · ${ota} (continuación)`,
+                                10,
+                                12
+                            );
+                        }
+                    },
                 });
-    
+
                 startY = pdf.lastAutoTable.finalY + 6;
-    
-                // ✅ Si `startY` supera el límite, asegurar nueva página con numeración correcta
+
+                // ✅ Si `startY` supera el límite, asegurar nueva página para el próximo grupo
                 if (startY > 240) {
                     pdf.addPage();
-                    pageNumber++; // ✅ Incrementar página en cada nueva hoja
                     startY = 10; // ✅ Reiniciar margen en nueva página
-    
-                    // ✅ Agregar número de página inmediatamente después de la nueva página
-                    //pdf.setFontSize(10);
-                    //pdf.text(` ${pageNumber}`, 185, 290);
                 }
             });
         });
