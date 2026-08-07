@@ -84,6 +84,7 @@ const CardData = ({ data = [] }) => {
                 <h4>{ota}</h4>
               </Card.Header>
               <PaginatedTable
+                responsive
                 className="card-data-table"
                 items={groupedEstancia[ota]}
                 headerRow={
@@ -163,6 +164,7 @@ const CardData = ({ data = [] }) => {
               <h4>Amenidades</h4>
             </Card.Header>
             <PaginatedTable
+              responsive
               items={tarjetaCreditoDebitoAmenidades}
               headerRow={
                 <tr className="bg-primary text-white">

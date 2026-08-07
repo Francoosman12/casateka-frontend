@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useRef } from "react";
-import { Container, Row, Card, Button, Spinner, Form } from "react-bootstrap";
+import { Container, Row, Col, Card, Button, Spinner, Form } from "react-bootstrap";
 import apiClient from "../api/client";
 import CashData from "./CashData";
 import CashDollarData from "./CashDollarData";
@@ -110,61 +110,64 @@ const GeneralDashboard = () => {
             Filtra por rango de fechas o selecciona un mes para personalizar los
             datos.
           </Card.Text>
-          <Form
-            ref={formRef}
-            className="d-flex justify-content-center align-items-center gap-3 mx-auto"
-            style={{ maxWidth: "600px" }}
-          >
-            {/* Filtro por rango de fechas */}
-            <Form.Group className="mb-0">
-              <Form.Label className="fw-bold">Desde:</Form.Label>
-              <Form.Control
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="border-secondary"
-              />
-            </Form.Group>
-            <Form.Group className="mb-0">
-              <Form.Label className="fw-bold">Hasta:</Form.Label>
-              <Form.Control
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="border-secondary"
-              />
-            </Form.Group>
-            {/* Filtro por Mes */}
-            <Form.Group className="mb-0">
-              <Form.Label className="fw-bold">Mes:</Form.Label>
-              <Form.Select
-                value={selectedMonth}
-                onChange={(e) => setSelectedMonth(e.target.value)}
-                className="border-secondary"
-              >
-                <option value="">Todos</option>
-                <option value="0">Enero</option>
-                <option value="1">Febrero</option>
-                <option value="2">Marzo</option>
-                <option value="3">Abril</option>
-                <option value="4">Mayo</option>
-                <option value="5">Junio</option>
-                <option value="6">Julio</option>
-                <option value="7">Agosto</option>
-                <option value="8">Septiembre</option>
-                <option value="9">Octubre</option>
-                <option value="10">Noviembre</option>
-                <option value="11">Diciembre</option>
-              </Form.Select>
-            </Form.Group>
-            <Button
-              variant="primary"
-              onClick={handleFilter}
-              className="px-3 py-1 fw-bold text-white"
-              style={{ fontSize: "0.9rem" }}
-            >
-              Filtrar
-            </Button>
+          <Form ref={formRef} className="mx-auto" style={{ maxWidth: "700px" }}>
+            <Row className="g-3 justify-content-center align-items-end">
+              <Col xs={12} sm={6} md={3}>
+                <Form.Group>
+                  <Form.Label className="fw-bold">Desde</Form.Label>
+                  <Form.Control
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="border-secondary"
+                  />
+                </Form.Group>
+              </Col>
+              <Col xs={12} sm={6} md={3}>
+                <Form.Group>
+                  <Form.Label className="fw-bold">Hasta</Form.Label>
+                  <Form.Control
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="border-secondary"
+                  />
+                </Form.Group>
+              </Col>
+              <Col xs={12} sm={6} md={3}>
+                <Form.Group>
+                  <Form.Label className="fw-bold">Mes</Form.Label>
+                  <Form.Select
+                    value={selectedMonth}
+                    onChange={(e) => setSelectedMonth(e.target.value)}
+                    className="border-secondary"
+                  >
+                    <option value="">Todos</option>
+                    <option value="0">Enero</option>
+                    <option value="1">Febrero</option>
+                    <option value="2">Marzo</option>
+                    <option value="3">Abril</option>
+                    <option value="4">Mayo</option>
+                    <option value="5">Junio</option>
+                    <option value="6">Julio</option>
+                    <option value="7">Agosto</option>
+                    <option value="8">Septiembre</option>
+                    <option value="9">Octubre</option>
+                    <option value="10">Noviembre</option>
+                    <option value="11">Diciembre</option>
+                  </Form.Select>
+                </Form.Group>
+              </Col>
+              <Col xs={12} sm={6} md={3}>
+                <Button
+                  variant="primary"
+                  onClick={handleFilter}
+                  className="fw-bold w-100"
+                >
+                  Filtrar
+                </Button>
+              </Col>
+            </Row>
           </Form>
         </Card.Body>
       </Card>

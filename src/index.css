@@ -5,3 +5,48 @@
   display: block;
   width: 100%;
 }
+
+/* Layout de la app: sidebar fijo en desktop + contenido desplazado */
+.app-sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 100vh;
+  background-color: var(--bs-dark);
+  z-index: 1030;
+}
+
+.app-topbar {
+  position: sticky;
+  top: 0;
+  height: 56px;
+  background-color: var(--bs-dark);
+  z-index: 1020;
+}
+
+.app-content {
+  min-height: 100vh;
+}
+
+@media (min-width: 992px) {
+  .app-content {
+    margin-left: 264px;
+  }
+}
+
+.sidebar-link {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 0.925rem;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+
+.sidebar-link:hover {
+  background-color: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.sidebar-link.active {
+  background-color: var(--bs-primary);
+  color: #fff;
+  font-weight: 600;
+}

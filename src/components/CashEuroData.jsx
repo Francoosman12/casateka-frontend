@@ -78,6 +78,7 @@ const CashEuroData = ({ data = [] }) => {
                 <h4>{ota}</h4>
               </Card.Header>
               <PaginatedTable
+                responsive
                 className="cash-euro-data-table"
                 items={groupedEstancia[ota]}
                 headerRow={
@@ -126,6 +127,7 @@ const CashEuroData = ({ data = [] }) => {
           <h3 className="text-dark">Amenidades</h3>
           <Card>
             <PaginatedTable
+              responsive
               items={efectivoEurosAmenidades}
               headerRow={
                 <tr className="bg-primary text-white">

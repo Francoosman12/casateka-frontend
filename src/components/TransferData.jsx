@@ -84,6 +84,7 @@ const TransferData = ({ data = [] }) => {
                 <h4>{ota}</h4>
               </Card.Header>
               <PaginatedTable
+                responsive
                 className="transfer-data-table"
                 items={groupedEstancia[ota]}
                 headerRow={
@@ -160,6 +161,7 @@ const TransferData = ({ data = [] }) => {
           <h3 className="text-dark">Amenidades</h3>
           <Card>
             <PaginatedTable
+              responsive
               items={transferenciasAmenidades}
               headerRow={
                 <tr className="bg-success text-white">
