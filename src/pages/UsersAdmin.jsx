@@ -1,9 +1,21 @@
 import React, { useEffect, useState } from "react";
-import { Container, Row, Col, Card, Form, Button, Table, Alert, Badge } from "react-bootstrap";
+import {
+  Container,
+  Row,
+  Col,
+  Card,
+  Form,
+  Button,
+  Table,
+  Alert,
+  Badge,
+  Modal,
+} from "react-bootstrap";
 import apiClient from "../api/client";
 import { useAuth } from "../context/AuthContext";
 
 const emptyForm = { username: "", nombre: "", password: "", role: "recepcion" };
+const emptyEditForm = { nombre: "", role: "recepcion", password: "" };
 
 const UsersAdmin = () => {
   const { user: currentUser } = useAuth();
@@ -12,6 +24,10 @@ const UsersAdmin = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [loading, setLoading] = useState(true);
+
+  const [editingUser, setEditingUser] = useState(null);
+  const [editForm, setEditForm] = useState(emptyEditForm);
+  const [editError, setEditError] = useState("");
 
   const fetchUsers = async () => {
     try {
@@ -57,6 +73,56 @@ const UsersAdmin = () => {
     }
   };
 
+  const openEdit = (targetUser) => {
+    setEditingUser(targetUser);
+    setEditForm({ nombre: targetUser.nombre, role: targetUser.role, password: "" });
+    setEditError("");
+  };
+
+  const closeEdit = () => {
+    setEditingUser(null);
+    setEditForm(emptyEditForm);
+    setEditError("");
+  };
+
+  const handleEditChange = (e) => {
+    setEditForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
+  };
+
+  const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    setEditError("");
+
+    const payload = { nombre: editForm.nombre, role: editForm.role };
+    if (editForm.password) payload.password = editForm.password;
+
+    try {
+      await apiClient.patch(`/api/auth/users/${editingUser._id}`, payload);
+      setSuccess(`Usuario "${editingUser.username}" actualizado correctamente.`);
+      closeEdit();
+      fetchUsers();
+    } catch (err) {
+      setEditError(
+        err.response?.data?.message || "No se pudo actualizar el usuario."
+      );
+    }
+  };
+
+  const handleDelete = async (targetUser) => {
+    const confirmDelete = window.confirm(
+      `¿Eliminar definitivamente la cuenta "${targetUser.username}"? Esta acción no se puede deshacer.`
+    );
+    if (!confirmDelete) return;
+
+    try {
+      await apiClient.delete(`/api/auth/users/${targetUser._id}`);
+      setSuccess(`Usuario "${targetUser.username}" eliminado.`);
+      fetchUsers();
+    } catch (err) {
+      setError(err.response?.data?.message || "No se pudo eliminar el usuario.");
+    }
+  };
+
   return (
     <Container className="mt-4 mb-5">
       <h2 className="mb-1">Usuarios</h2>
@@ -69,8 +135,8 @@ const UsersAdmin = () => {
           <Card className="shadow-sm">
             <Card.Body>
               <Card.Title>Crear nuevo usuario</Card.Title>
-              {error && <Alert variant="danger">{error}</Alert>}
-              {success && <Alert variant="success">{success}</Alert>}
+              {error && <Alert variant="danger" onClose={() => setError("")} dismissible>{error}</Alert>}
+              {success && <Alert variant="success" onClose={() => setSuccess("")} dismissible>{success}</Alert>}
               <Form onSubmit={handleSubmit}>
                 <Form.Group className="mb-3">
                   <Form.Label>Nombre completo</Form.Label>
@@ -141,7 +207,10 @@ const UsersAdmin = () => {
                         {u.activo ? "Activo" : "Inactivo"}
                       </Badge>
                     </td>
-                    <td>
+                    <td className="d-flex flex-wrap gap-2">
+                      <Button size="sm" variant="outline-primary" onClick={() => openEdit(u)}>
+                        Editar
+                      </Button>
                       <Button
                         size="sm"
                         variant={u.activo ? "outline-danger" : "outline-success"}
@@ -150,6 +219,14 @@ const UsersAdmin = () => {
                       >
                         {u.activo ? "Desactivar" : "Activar"}
                       </Button>
+                      <Button
+                        size="sm"
+                        variant="danger"
+                        disabled={u._id === currentUser?.id}
+                        onClick={() => handleDelete(u)}
+                      >
+                        Eliminar
+                      </Button>
                     </td>
                   </tr>
                 ))}
@@ -157,6 +234,68 @@ const UsersAdmin = () => {
           </Table>
         </Col>
       </Row>
+
+      <Modal show={!!editingUser} onHide={closeEdit} centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Editar usuario</Modal.Title>
+        </Modal.Header>
+        <Form onSubmit={handleEditSubmit}>
+          <Modal.Body>
+            {editError && <Alert variant="danger">{editError}</Alert>}
+            <p className="text-muted small">
+              Usuario: <strong>{editingUser?.username}</strong> (no se puede cambiar)
+            </p>
+            <Form.Group className="mb-3">
+              <Form.Label>Nombre completo</Form.Label>
+              <Form.Control
+                name="nombre"
+                value={editForm.nombre}
+                onChange={handleEditChange}
+                required
+              />
+            </Form.Group>
+            <Form.Group className="mb-3">
+              <Form.Label>Rol</Form.Label>
+              <Form.Select
+                name="role"
+                value={editForm.role}
+                onChange={handleEditChange}
+                disabled={editingUser?._id === currentUser?.id}
+              >
+                <option value="recepcion">Recepción</option>
+                <option value="admin">Administrador</option>
+              </Form.Select>
+              {editingUser?._id === currentUser?.id && (
+                <Form.Text className="text-muted">
+                  No podés cambiar tu propio rol.
+                </Form.Text>
+              )}
+            </Form.Group>
+            <Form.Group className="mb-1">
+              <Form.Label>Nueva contraseña</Form.Label>
+              <Form.Control
+                type="password"
+                name="password"
+                value={editForm.password}
+                onChange={handleEditChange}
+                minLength={8}
+                placeholder="Dejar en blanco para no cambiarla"
+              />
+              <Form.Text className="text-muted">
+                Usá esto si el usuario se olvidó su contraseña.
+              </Form.Text>
+            </Form.Group>
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="outline-secondary" onClick={closeEdit}>
+              Cancelar
+            </Button>
+            <Button type="submit" variant="dark">
+              Guardar cambios
+            </Button>
+          </Modal.Footer>
+        </Form>
+      </Modal>
     </Container>
   );
 };
