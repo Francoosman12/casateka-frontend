@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react";
 import { Button, Container, Row, Col } from "react-bootstrap";
 import EditMovementModal from "../components/EditMovementModal";
 import PaginatedTable from "../components/common/PaginatedTable";
-import axios from "axios";
+import apiClient from "../api/client";
 
 const Movements = () => {
   const [movements, setMovements] = useState([]); // Estado para los movimientos
@@ -26,9 +26,7 @@ const Movements = () => {
   useEffect(() => {
     const fetchMovements = async () => {
       try {
-        const response = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/api/movements`
-        ); // Utilizando la variable de entorno
+        const response = await apiClient.get("/api/movements");
         setMovements(Array.isArray(response.data) ? response.data : []); // Validar la respuesta como array
       } catch (error) {
         console.error("Error al obtener movimientos:", error.message);
@@ -46,9 +44,7 @@ const Movements = () => {
     if (!confirmDelete) return; // Si el usuario cancela, no hacer nada
 
     try {
-      await axios.delete(
-        `${import.meta.env.VITE_BACKEND_URL}/api/movements/${id}`
-      ); // Utilizando la variable de entorno
+      await apiClient.delete(`/api/movements/${id}`);
       setMovements(movements.filter((movement) => movement._id !== id)); // Actualizar estado
     } catch (error) {
       console.error("Error al eliminar el movimiento:", error.message);
@@ -123,10 +119,8 @@ const Movements = () => {
     if (!confirmUpdate) return;
 
     try {
-      const response = await axios.put(
-        `${import.meta.env.VITE_BACKEND_URL}/api/movements/${
-          selectedMovement._id
-        }`,
+      const response = await apiClient.put(
+        `/api/movements/${selectedMovement._id}`,
         formData
       );
 

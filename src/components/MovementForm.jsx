@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import axios from "axios";
+import apiClient from "../api/client";
 import { Form, Button, Row, Col, Container } from "react-bootstrap";
 import DatePicker from "react-datepicker";
 import "react-datepicker/dist/react-datepicker.css";
@@ -22,9 +22,6 @@ const MovementForm = () => {
   });
 
   const [ingresoSeleccionado, setIngresoSeleccionado] = useState("");
-
-  // Variable de entorno para URL del backend
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
 
   // Función para determinar el tipo de habitación según el número
   const determinarTipoHabitacion = (numeroHabitacion) => {
@@ -102,7 +99,7 @@ const MovementForm = () => {
     }).format(montoTotal);
 
     try {
-      const response = await axios.post(`${backendUrl}/api/movements`, {
+      const response = await apiClient.post("/api/movements", {
         ...formData,
         ingreso: {
           tipo: formData.ingreso?.tipo || "Tarjeta",

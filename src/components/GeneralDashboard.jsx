@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { Container, Row, Card, Button, Spinner, Form } from "react-bootstrap";
-import axios from "axios";
+import apiClient from "../api/client";
 import CashData from "./CashData";
 import CashDollarData from "./CashDollarData";
 import CashEuroData from "./CashEuroData";
@@ -20,13 +20,10 @@ const GeneralDashboard = () => {
   const buttonsRef = useRef(null);
   const formRef = useRef(null);
 
-  // URL base desde la variable de entorno
-  const backendUrl = import.meta.env.VITE_BACKEND_URL;
-
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await axios.get(`${backendUrl}/api/movements`);
+        const response = await apiClient.get("/api/movements");
         setData(response.data);
         setFilteredData(response.data);
         setLoading(false);
@@ -36,7 +33,7 @@ const GeneralDashboard = () => {
       }
     };
     fetchData();
-  }, [backendUrl]);
+  }, []);
 
   // Función para filtrar por rango de fechas y, opcionalmente, por mes
   const handleFilter = () => {

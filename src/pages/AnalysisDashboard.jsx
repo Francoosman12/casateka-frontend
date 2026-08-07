@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Container, Card, ProgressBar, Form, Button } from "react-bootstrap";
 import { Bar, Pie, Line } from "react-chartjs-2";
-import axios from "axios";
+import apiClient from "../api/client";
 import {
   Chart as ChartJS,
   ArcElement,
@@ -35,9 +35,7 @@ const AnalysisDashboard = () => {
   useEffect(() => {
     const fetchMovements = async () => {
       try {
-        const response = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/api/movements`
-        );
+        const response = await apiClient.get("/api/movements");
         setData(response.data);
         setFilteredData(response.data); // ✅ Inicialmente, los datos no están filtrados
       } catch (error) {

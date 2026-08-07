@@ -3,7 +3,7 @@ import { Container, Form, Button } from "react-bootstrap";
 import { exportToExcel } from "../utils/excelUtils";
 import { generatePDFReport } from "../utils/pdfUtils";
 import ReportTable from "../components/ReportTable";
-import axios from "axios";
+import apiClient from "../api/client";
 
 const ReportsPage = () => {
   const [startDate, setStartDate] = useState("");
@@ -16,9 +16,7 @@ const ReportsPage = () => {
   useEffect(() => {
     const fetchMovements = async () => {
       try {
-        const response = await axios.get(
-          `${import.meta.env.VITE_BACKEND_URL}/api/movements`
-        );
+        const response = await apiClient.get("/api/movements");
         setReportData(response.data); // ✅ Guardamos todos los movimientos
       } catch (error) {
         console.error("🚨 Error al obtener los movimientos:", error.message);
