@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Container,
   Row,
@@ -10,12 +10,71 @@ import {
   Alert,
   Badge,
   Modal,
+  InputGroup,
 } from "react-bootstrap";
+import { FiEye, FiEyeOff } from "react-icons/fi";
 import apiClient from "../api/client";
 import { useAuth } from "../context/AuthContext";
 
-const emptyForm = { username: "", nombre: "", password: "", role: "recepcion" };
-const emptyEditForm = { nombre: "", role: "recepcion", password: "" };
+const emptyForm = {
+  username: "",
+  nombre: "",
+  password: "",
+  confirmPassword: "",
+  role: "recepcion",
+};
+const emptyEditForm = { nombre: "", role: "recepcion", password: "", confirmPassword: "" };
+
+// Campo de contraseña con botón para mostrar/ocultar (el "ojito"), como en
+// cualquier formulario de login o alta de usuario profesional.
+const PasswordField = ({
+  label,
+  name,
+  value,
+  onChange,
+  placeholder,
+  required,
+  minLength,
+  helpText,
+  isInvalid,
+  autoComplete = "new-password",
+}) => {
+  const [visible, setVisible] = useState(false);
+
+  return (
+    <Form.Group className="mb-3">
+      <Form.Label>{label}</Form.Label>
+      <InputGroup hasValidation>
+        <Form.Control
+          type={visible ? "text" : "password"}
+          name={name}
+          value={value}
+          onChange={onChange}
+          minLength={minLength}
+          required={required}
+          placeholder={placeholder}
+          autoComplete={autoComplete}
+          isInvalid={isInvalid}
+        />
+        <Button
+          variant="outline-secondary"
+          type="button"
+          onClick={() => setVisible((prev) => !prev)}
+          tabIndex={-1}
+          aria-label={visible ? "Ocultar contraseña" : "Mostrar contraseña"}
+        >
+          {visible ? <FiEyeOff /> : <FiEye />}
+        </Button>
+        {isInvalid && (
+          <Form.Control.Feedback type="invalid">
+            Las contraseñas no coinciden.
+          </Form.Control.Feedback>
+        )}
+      </InputGroup>
+      {helpText && <Form.Text className="text-muted">{helpText}</Form.Text>}
+    </Form.Group>
+  );
+};
 
 const UsersAdmin = () => {
   const { user: currentUser } = useAuth();
@@ -29,7 +88,7 @@ const UsersAdmin = () => {
   const [editForm, setEditForm] = useState(emptyEditForm);
   const [editError, setEditError] = useState("");
 
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       const { data } = await apiClient.get("/api/auth/users");
       setUsers(data);
@@ -38,22 +97,32 @@ const UsersAdmin = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     fetchUsers();
-  }, []);
+  }, [fetchUsers]);
 
   const handleChange = (e) => {
     setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const createPasswordMismatch =
+    form.confirmPassword.length > 0 && form.password !== form.confirmPassword;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError("");
     setSuccess("");
+
+    if (form.password !== form.confirmPassword) {
+      setError("Las contraseñas no coinciden.");
+      return;
+    }
+
     try {
-      await apiClient.post("/api/auth/register", form);
+      const { confirmPassword, ...payload } = form;
+      await apiClient.post("/api/auth/register", payload);
       setSuccess(`Usuario "${form.username}" creado correctamente.`);
       setForm(emptyForm);
       fetchUsers();
@@ -75,7 +144,12 @@ const UsersAdmin = () => {
 
   const openEdit = (targetUser) => {
     setEditingUser(targetUser);
-    setEditForm({ nombre: targetUser.nombre, role: targetUser.role, password: "" });
+    setEditForm({
+      nombre: targetUser.nombre,
+      role: targetUser.role,
+      password: "",
+      confirmPassword: "",
+    });
     setEditError("");
   };
 
@@ -89,9 +163,18 @@ const UsersAdmin = () => {
     setEditForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
   };
 
+  const editPasswordMismatch =
+    editForm.confirmPassword.length > 0 &&
+    editForm.password !== editForm.confirmPassword;
+
   const handleEditSubmit = async (e) => {
     e.preventDefault();
     setEditError("");
+
+    if (editForm.password !== editForm.confirmPassword) {
+      setEditError("Las contraseñas no coinciden.");
+      return;
+    }
 
     const payload = { nombre: editForm.nombre, role: editForm.role };
     if (editForm.password) payload.password = editForm.password;
@@ -137,7 +220,7 @@ const UsersAdmin = () => {
               <Card.Title>Crear nuevo usuario</Card.Title>
               {error && <Alert variant="danger" onClose={() => setError("")} dismissible>{error}</Alert>}
               {success && <Alert variant="success" onClose={() => setSuccess("")} dismissible>{success}</Alert>}
-              <Form onSubmit={handleSubmit}>
+              <Form onSubmit={handleSubmit} noValidate>
                 <Form.Group className="mb-3">
                   <Form.Label>Nombre completo</Form.Label>
                   <Form.Control
@@ -156,17 +239,23 @@ const UsersAdmin = () => {
                     required
                   />
                 </Form.Group>
-                <Form.Group className="mb-3">
-                  <Form.Label>Contraseña</Form.Label>
-                  <Form.Control
-                    type="password"
-                    name="password"
-                    value={form.password}
-                    onChange={handleChange}
-                    minLength={8}
-                    required
-                  />
-                </Form.Group>
+                <PasswordField
+                  label="Contraseña"
+                  name="password"
+                  value={form.password}
+                  onChange={handleChange}
+                  minLength={8}
+                  required
+                />
+                <PasswordField
+                  label="Confirmar contraseña"
+                  name="confirmPassword"
+                  value={form.confirmPassword}
+                  onChange={handleChange}
+                  minLength={8}
+                  required
+                  isInvalid={createPasswordMismatch}
+                />
                 <Form.Group className="mb-3">
                   <Form.Label>Rol</Form.Label>
                   <Form.Select name="role" value={form.role} onChange={handleChange}>
@@ -239,7 +328,7 @@ const UsersAdmin = () => {
         <Modal.Header closeButton>
           <Modal.Title>Editar usuario</Modal.Title>
         </Modal.Header>
-        <Form onSubmit={handleEditSubmit}>
+        <Form onSubmit={handleEditSubmit} noValidate>
           <Modal.Body>
             {editError && <Alert variant="danger">{editError}</Alert>}
             <p className="text-muted small">
@@ -271,20 +360,24 @@ const UsersAdmin = () => {
                 </Form.Text>
               )}
             </Form.Group>
-            <Form.Group className="mb-1">
-              <Form.Label>Nueva contraseña</Form.Label>
-              <Form.Control
-                type="password"
-                name="password"
-                value={editForm.password}
-                onChange={handleEditChange}
-                minLength={8}
-                placeholder="Dejar en blanco para no cambiarla"
-              />
-              <Form.Text className="text-muted">
-                Usá esto si el usuario se olvidó su contraseña.
-              </Form.Text>
-            </Form.Group>
+            <PasswordField
+              label="Nueva contraseña"
+              name="password"
+              value={editForm.password}
+              onChange={handleEditChange}
+              minLength={8}
+              placeholder="Dejar en blanco para no cambiarla"
+              helpText="Usá esto si el usuario se olvidó su contraseña."
+            />
+            <PasswordField
+              label="Confirmar nueva contraseña"
+              name="confirmPassword"
+              value={editForm.confirmPassword}
+              onChange={handleEditChange}
+              minLength={8}
+              placeholder="Repetir la nueva contraseña"
+              isInvalid={editPasswordMismatch}
+            />
           </Modal.Body>
           <Modal.Footer>
             <Button variant="outline-secondary" onClick={closeEdit}>
