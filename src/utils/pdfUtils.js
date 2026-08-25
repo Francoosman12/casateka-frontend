@@ -111,17 +111,17 @@ const monthYear = formattedEndDate.toLocaleDateString("es-MX", options); // ✅ 
 
     let coverY = logoY + logoHeight + 18;
 
-    pdf.setFontSize(13);
-    pdf.setTextColor(90, 90, 90);
-    pdf.text("Operadora Kapen S.A de C.V.", centerX, coverY, { align: "center" });
-
-    coverY += 12;
     pdf.setFontSize(18);
     pdf.setTextColor(20, 20, 20);
-    pdf.text("Reporte General de Ingresos de Hotel Casa Teka", centerX, coverY, {
+    pdf.text("Reporte General de Ingresos Hotel Casa Teka", centerX, coverY, {
         align: "center",
         maxWidth: 160,
     });
+
+    coverY += 12;
+    pdf.setFontSize(13);
+    pdf.setTextColor(90, 90, 90);
+    pdf.text("Operadora Kapen S.A de C.V.", centerX, coverY, { align: "center" });
 
     coverY += 18;
     pdf.setDrawColor(63, 92, 74); // verde de marca
@@ -131,7 +131,7 @@ const monthYear = formattedEndDate.toLocaleDateString("es-MX", options); // ✅ 
     coverY += 12;
     pdf.setFontSize(12);
     pdf.setTextColor(60, 60, 60);
-    pdf.text(`Periodo de ${startDay} al ${endDay} de ${monthYear}`, centerX, coverY, {
+    pdf.text(`Periodo del ${startDay} al ${endDay} de ${monthYear}`, centerX, coverY, {
         align: "center",
     });
 
@@ -158,13 +158,13 @@ const monthYear = formattedEndDate.toLocaleDateString("es-MX", options); // ✅ 
     // 🔹 Agregar la tabla de totales antes del desglose detallado
     let startY = 20; // ✅ Definir la posición inicial para las tablas
 
-    // 🔹 Mini tabla de Efectivo
+    // 🔹 Mini tabla de Totales Generales
     autoTable(pdf, {
-        head: [["Efectivo", "Total"]],
+        head: [["Totales", "Total"]],
         body: [
-            ["Efectivo MXN", formatNumber(totalEfectivoMXN)],
-            ["Efectivo USD", formatNumber(totalEfectivoUSD)],
-            ["Efectivo EUR", formatNumber(totalEfectivoEUR)]
+            ["Total General", formatNumber(totalGeneral)],
+            ["Tarifa Promedio por Noche", formatNumber(tarifaPromedioPorNoche)],
+            ["Total Noches Vendidas", totalNochesVendidas]
         ],
         startY: startY,
         theme: "grid",
@@ -173,27 +173,9 @@ const monthYear = formattedEndDate.toLocaleDateString("es-MX", options); // ✅ 
         headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] }, // 🔹 Fondo negro y texto blanco
         didDrawPage: () => printPageNumber(pdf),
     });
-    
+
     startY = pdf.lastAutoTable.finalY + 10; // ✅ Espaciado entre tablas
-    
-    // 🔹 Mini tabla de Tarjetas
-    autoTable(pdf, {
-        head: [["Banco", "Total"]],
-        body: [
-            ["Tarjeta Débito/Crédito", formatNumber(totalTarjetaCreditoDebito)],
-            ["Tarjetas Virtuales", formatNumber(totalTarjetaVirtual)],
-            ["Transferencias", formatNumber(totalTransferencias)]
-        ],
-        startY: startY,
-        theme: "grid",
-        styles: { fontSize: 10, cellPadding: 3 },
-        columnStyles: { 1: { halign: "right", fontStyle: "bold" } },
-        headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] },
-        didDrawPage: () => printPageNumber(pdf),
-    });
-    
-    startY = pdf.lastAutoTable.finalY + 10;
-    
+
     // 🔹 Mini tabla de Conceptos
     autoTable(pdf, {
         head: [["Concepto", "Total"]],
@@ -208,9 +190,9 @@ const monthYear = formattedEndDate.toLocaleDateString("es-MX", options); // ✅ 
         headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] },
         didDrawPage: () => printPageNumber(pdf),
     });
-    
+
     startY = pdf.lastAutoTable.finalY + 10;
-    
+
     // 🔹 Mini tabla de OTAs
     autoTable(pdf, {
         head: [["OTA", "Total"]],
@@ -226,16 +208,34 @@ const monthYear = formattedEndDate.toLocaleDateString("es-MX", options); // ✅ 
         headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] },
         didDrawPage: () => printPageNumber(pdf),
     });
-    
+
     startY = pdf.lastAutoTable.finalY + 10;
-    
-    // 🔹 Mini tabla de Totales Generales
+
+    // 🔹 Mini tabla de Tarjetas
     autoTable(pdf, {
-        head: [["Totales", "Total"]],
+        head: [["Banco", "Total"]],
         body: [
-            ["Total General", formatNumber(totalGeneral)],
-            ["Tarifa Promedio por Noche", formatNumber(tarifaPromedioPorNoche)],
-            ["Total Noches Vendidas", totalNochesVendidas]
+            ["Tarjeta Débito/Crédito", formatNumber(totalTarjetaCreditoDebito)],
+            ["Tarjetas Virtuales", formatNumber(totalTarjetaVirtual)],
+            ["Transferencias", formatNumber(totalTransferencias)]
+        ],
+        startY: startY,
+        theme: "grid",
+        styles: { fontSize: 10, cellPadding: 3 },
+        columnStyles: { 1: { halign: "right", fontStyle: "bold" } },
+        headStyles: { fillColor: [0, 0, 0], textColor: [255, 255, 255] },
+        didDrawPage: () => printPageNumber(pdf),
+    });
+
+    startY = pdf.lastAutoTable.finalY + 10;
+
+    // 🔹 Mini tabla de Efectivo
+    autoTable(pdf, {
+        head: [["Efectivo", "Total"]],
+        body: [
+            ["Efectivo MXN", formatNumber(totalEfectivoMXN)],
+            ["Efectivo USD", formatNumber(totalEfectivoUSD)],
+            ["Efectivo EUR", formatNumber(totalEfectivoEUR)]
         ],
         startY: startY,
         theme: "grid",
